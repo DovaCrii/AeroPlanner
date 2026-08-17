@@ -10,7 +10,7 @@ import {
 /** A due-east axis at the equator: easy to reason about by hand. */
 const straightAxis: LatLng[] = [
   { lat: 0, lng: 0 },
-  { lat: 0, lng: 0.01 }, // ~1113 m east
+  { lat: 0, lng: 0.01 }, // ~1112 m east
 ];
 
 /** An axis that turns 90° — the case where naive offsetting pinches corners. */

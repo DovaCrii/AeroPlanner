@@ -1,6 +1,8 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useMissionStore } from "@/store/missionStore";
+import { useMapStore } from "@/store/mapStore";
+import { createMapElevationSource, hasTerrain } from "@/lib/mapElevation";
 import type { SelectionMode } from "@/store/missionStore";
 
 const GRAPH_HEIGHT = 100;
@@ -21,6 +23,8 @@ export function ElevationGraph() {
   const selectedIndices = useMissionStore((s) => s.selectedWaypointIndices);
   const updateWaypoint = useMissionStore((s) => s.updateWaypoint);
   const selectWaypoint = useMissionStore((s) => s.selectWaypoint);
+  const map = useMapStore((s) => s.map);
+  const terrainVersion = useMapStore((s) => s.terrainVersion);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -69,13 +73,40 @@ export function ElevationGraph() {
   const plotW = svgWidth - PAD_LEFT - PAD_RIGHT;
   const plotH = GRAPH_HEIGHT - PAD_TOP - PAD_BOTTOM;
 
-  // Compute Y scale
+  /**
+   * Ground elevation under each waypoint, expressed relative to the takeoff
+   * point.
+   *
+   * Waypoint heights are relative to takeoff and terrain comes back as metres
+   * above sea level, so one of the two has to be shifted or the chart compares
+   * unlike numbers. Subtracting the first waypoint's ground elevation puts both
+   * on the same datum, which also makes the vertical gap on screen the real
+   * clearance.
+   */
+  const terrainRelative = useMemo(() => {
+    if (!map || waypoints.length === 0 || !hasTerrain(map)) return null;
+    const source = createMapElevationSource(map);
+
+    const absolute = waypoints.map((wp) =>
+      source.elevationM({ lat: wp.latitude, lng: wp.longitude }),
+    );
+    const datum = absolute.find((e) => e !== null);
+    if (datum === undefined || datum === null) return null;
+
+    return absolute.map((e) => (e === null ? null : e - datum));
+    // terrainVersion re-runs this once the DEM tiles have actually landed.
+  }, [map, waypoints, terrainVersion]);
+
+  // Compute Y scale, leaving room for the terrain when it is known
   const heights = waypoints.map((wp) => wp.height);
-  const rawMin = Math.min(...heights);
-  const rawMax = Math.max(...heights);
+  const knownTerrain = (terrainRelative ?? []).filter(
+    (t): t is number => t !== null,
+  );
+  const rawMin = Math.min(...heights, ...knownTerrain);
+  const rawMax = Math.max(...heights, ...knownTerrain);
   const spread = rawMax - rawMin;
   const yPad = Math.max(spread * 0.25, 10);
-  const yMin = Math.max(0, Math.floor(rawMin - yPad));
+  const yMin = Math.floor(rawMin - yPad);
   const yMax = Math.ceil(rawMax + yPad);
 
   const toX = useCallback(
@@ -296,6 +327,43 @@ export function ElevationGraph() {
               }
               return lines;
             })()}
+
+            {/*
+              Ground profile under the route. Drawn first so the flight path
+              sits on top of it, and filled down to the bottom of the pane so
+              the gap between the two reads as the actual clearance.
+            */}
+            {terrainRelative && (
+              <>
+                <path
+                  d={
+                    `M ${toX(0)} ${GRAPH_HEIGHT} ` +
+                    terrainRelative
+                      .map((t, i) =>
+                        t === null ? null : `L ${toX(i)} ${toY(t)}`,
+                      )
+                      .filter(Boolean)
+                      .join(" ") +
+                    ` L ${toX(terrainRelative.length - 1)} ${GRAPH_HEIGHT} Z`
+                  }
+                  fill="#78716c"
+                  opacity={0.35}
+                />
+                <path
+                  d={terrainRelative
+                    .map((t, i) =>
+                      t === null
+                        ? null
+                        : `${i === 0 ? "M" : "L"} ${toX(i)} ${toY(t)}`,
+                    )
+                    .filter(Boolean)
+                    .join(" ")}
+                  fill="none"
+                  stroke="#a8a29e"
+                  strokeWidth={1.5}
+                />
+              </>
+            )}
 
             {/* Edge-to-edge dotted line segments between circles */}
             {edgeSegments.map((seg, i) => (

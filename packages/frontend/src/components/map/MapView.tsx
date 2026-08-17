@@ -10,6 +10,7 @@ import type { LngLatBoundsLike } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useMissionStore } from "@/store/missionStore";
 import { useConfigStore } from "@/store/configStore";
+import { useMapStore } from "@/store/mapStore";
 import { usePreferencesStore } from "@/store/preferencesStore";
 import {
   getMapStyle,
@@ -38,6 +39,34 @@ interface BuildingPopupData {
   lat: number;
   height: number | null;
   vertices: [number, number][]; // [lat, lng][]
+}
+
+/**
+ * Publishes the map instance and signals when terrain data lands.
+ *
+ * The elevation chart lives outside this subtree and needs both: the handle to
+ * query, and a nudge once the DEM tiles arrive — before that, every elevation
+ * query comes back empty.
+ */
+function MapRegistration() {
+  const { current: map } = useMap();
+  const setMap = useMapStore((s) => s.setMap);
+  const bumpTerrainVersion = useMapStore((s) => s.bumpTerrainVersion);
+
+  useEffect(() => {
+    if (!map) return;
+    const m = map.getMap();
+    setMap(m);
+
+    const onIdle = () => bumpTerrainVersion();
+    m.on("idle", onIdle);
+    return () => {
+      m.off("idle", onIdle);
+      setMap(null);
+    };
+  }, [map, setMap, bumpTerrainVersion]);
+
+  return null;
 }
 
 /** Sets up 3D buildings layer and syncs 2D/3D pitch/rotation. */
@@ -555,6 +584,7 @@ export function MapView() {
           maxzoom={15}
           attribution={TERRAIN_ATTRIBUTION}
         />
+        <MapRegistration />
         <FitBoundsOnLoad />
         <GeocoderControl />
         <SceneSetup is3D={is3D} mapStyle={mapStyle} />
