@@ -29,6 +29,18 @@ export {
   overlapForLineSpacing,
 } from "./photogrammetry/coverage.js";
 
+export type { LatLng } from "./geo/geodesy.js";
+export {
+  distanceM,
+  bearingDeg,
+  bearingDeltaDeg,
+  destination,
+  polylineLengthM,
+} from "./geo/geodesy.js";
+
+export type { CorridorRequest, CorridorPlan } from "./corridor/corridor.js";
+export { planCorridor, offsetPolyline } from "./corridor/corridor.js";
+
 export type { AircraftSpec } from "./catalog/aircraft.js";
 export {
   MAVIC_3E,
