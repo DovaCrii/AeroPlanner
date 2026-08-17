@@ -30,12 +30,17 @@ de cámara). Si falla, hay que entender por qué **antes** de seguir.
 
 ### Y después, en este orden
 
-1. **Fase 3 — terrain following.** `queryTerrainElevation()` de MapLibre es el
-   camino directo para muestrear el DEM que la vista 3D ya carga.
-2. **Fase 4 — simulación**, y **Fase 5 — integración con AeroControl**.
-3. **Deuda menor de la Fase 2:** el eje del corredor es hoy un tramo recto. El
-   motor acepta polilíneas de N vértices, así que dibujar un eje quebrado o
-   importarlo desde KML es cambiar la entrada, no el cálculo.
+1. **Fase 4 — simulación cinemática.** Recorrido animado, footprints de foto y
+   análisis de cobertura.
+2. **Fase 5 — integración con AeroControl** (la validación contra el permiso es
+   lo que distingue este planificador de uno de catálogo).
+3. **Deuda menor acumulada**, ninguna bloqueante:
+   - El eje del corredor es hoy un tramo recto. El motor acepta polilíneas de N
+     vértices, así que dibujar un eje quebrado o importarlo desde KML es cambiar
+     la entrada, no el cálculo.
+   - `F3.2`: importar un DEM propio en GeoTIFF (necesita `geotiff.js`).
+   - `F3.4`/`F3.5`: el clearance mínimo y la advertencia de tasa de ascenso ya se
+     calculan en el dominio, pero todavía no se muestran.
 
 ## Alcance: planificar y visualizar, nunca procesar
 

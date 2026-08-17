@@ -51,6 +51,21 @@ export {
   waypointsForCorridor,
 } from "./corridor/waypoints.js";
 
+export type {
+  ElevationSource,
+  TerrainFollowRequest,
+  TerrainFollowPoint,
+  TerrainFollowResult,
+  ProfileSample,
+  ClearanceReport,
+} from "./terrain/terrain.js";
+export {
+  followTerrain,
+  terrainProfile,
+  clearanceAlongRoute,
+  requiredClimbRateMs,
+} from "./terrain/terrain.js";
+
 export type { AircraftSpec } from "./catalog/aircraft.js";
 export {
   MAVIC_3E,

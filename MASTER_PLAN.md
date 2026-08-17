@@ -353,13 +353,57 @@ quebrado o importarlo desde KML es cambiar la entrada, no el cálculo.
 **Objetivo de salida:** volar a altura constante sobre el suelo en terreno con
 pendiente, que es donde el vuelo a altura fija falla.
 
-| #      | Tarea                                                                                                           | Estado |
-| ------ | --------------------------------------------------------------------------------------------------------------- | ------ |
-| `F3.1` | Fuente base: **Copernicus GLO-30** (libre, 30 m)                                                                | ⬜     |
-| `F3.2` | Importar DEM/DSM propio en GeoTIFF (fotogrametría previa de la faena — mejor dato que los 30 m)                 | ⬜     |
-| `F3.3` | `packages/mission-core/terrain`: muestreo de elevación por waypoint, altitud = terreno + AGL objetivo           | ⬜     |
-| `F3.4` | Perfil terreno/vuelo con **clearance mínimo** destacado                                                         | ⬜     |
-| `F3.5` | Advertencia cuando la pendiente exige una tasa de ascenso que la aeronave no alcanza a la velocidad planificada | ⬜     |
+| #      | Tarea                                                                                                           | Estado                                                                      |
+| ------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `F3.1` | Fuente base de elevación                                                                                        | ✅ **AWS Terrain Tiles**, no Copernicus — ver abajo                         |
+| `F3.2` | Importar DEM/DSM propio en GeoTIFF (fotogrametría previa de la faena)                                           | ⬜ requiere `geotiff.js`                                                    |
+| `F3.3` | `packages/mission-core/terrain`: muestreo de elevación por waypoint, altitud = terreno + AGL objetivo           | ✅                                                                          |
+| `F3.4` | Perfil terreno/vuelo con **clearance mínimo**                                                                   | ✅ perfil dibujado; el mínimo se calcula pero aún no se destaca en pantalla |
+| `F3.5` | Advertencia cuando la pendiente exige una tasa de ascenso que la aeronave no alcanza a la velocidad planificada | ✅ en el dominio; falta mostrarla                                           |
+
+### La fuente cambió: AWS Terrain Tiles
+
+El plan decía Copernicus GLO-30. Se usa **AWS Terrain Tiles** (formato
+_terrarium_) porque ya entró con la migración a MapLibre — es la misma fuente que
+dibuja el relieve 3D, así que el perfil que se calcula y el terreno que se ve son
+el mismo dato, sin una segunda descarga ni riesgo de discrepancia.
+
+**Verificado decodificando el tile a mano** (`(R×256 + G + B/256) − 32768`) contra
+puntos de elevación conocida:
+
+| Punto            | Medido | Real                                    |
+| ---------------- | ------ | --------------------------------------- |
+| Santiago centro  | 574 m  | ~570 m                                  |
+| Cerro El Plomo   | 5311 m | 5424 m (cumbre; el píxel cae bajo ella) |
+| Barcelona centro | 37 m   | ~30 m                                   |
+| Mar Mediterráneo | 0 m    | 0 m                                     |
+
+Esa comprobación valida además la codificación `terrarium`, que era el riesgo
+real: usar la fórmula de Mapbox sobre datos Terrarium no falla, **devuelve un
+relieve absurdo en silencio**.
+
+### El dominio no sabe de mapas
+
+`mission-core/terrain` define la interfaz `ElevationSource` — "¿qué altura tiene
+el suelo aquí?" — y el frontend la implementa con `queryTerrainElevation()` de
+MapLibre (`lib/mapElevation.ts`). Así el cálculo se prueba en Node con fuentes
+sintéticas y no arrastra el mapa.
+
+**Un hueco de datos nunca se rellena con cero.** `ElevationSource` devuelve `null`
+donde no sabe, y `followTerrain` deja esa altitud en `null` en vez de inventarla:
+MapLibre reporta 0 para teselas no cargadas, y tratar eso como nivel del mar
+planifica un vuelo contra un cerro. Los huecos se cuentan y se informan.
+
+**El clearance se muestrea entre waypoints, no solo en ellos.** Una ruta puede
+librar ambos extremos de un tramo y aun así atravesar la loma del medio; hay una
+prueba con exactamente esa colina escondida.
+
+### En la interfaz
+
+El gráfico de elevación ahora dibuja **el perfil del suelo bajo la ruta**, no solo
+la altitud programada. Ambos se llevan al mismo dato de referencia —el terreno
+bajo el primer waypoint— para que la separación vertical en pantalla sea el
+clearance real.
 
 **Oráculo:** muestreo manual del mismo DEM en QGIS sobre los mismos puntos.
 

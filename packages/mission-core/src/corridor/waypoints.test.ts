@@ -3,13 +3,13 @@ import { waypointsAlongLine, waypointsForCorridor } from "./waypoints.js";
 import { planCorridor } from "./corridor.js";
 import { distanceM, type LatLng } from "../geo/geodesy.js";
 
-/** Due east at the equator, ~1113 m long. */
+/** Due east at the equator, ~1112 m long. */
 const line: LatLng[] = [
   { lat: 0, lng: 0 },
   { lat: 0, lng: 0.01 },
 ];
 
-/** An L: 1113 m east, then 1105 m north. */
+/** An L: 1112 m east, then 1105 m north. */
 const bent: LatLng[] = [
   { lat: 0, lng: 0 },
   { lat: 0, lng: 0.01 },
