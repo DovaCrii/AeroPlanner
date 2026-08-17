@@ -1,4 +1,4 @@
-import { Source, Layer, Marker, useMap } from "react-map-gl/mapbox";
+import { Source, Layer, Marker, useMap } from "react-map-gl/maplibre";
 import { useMissionStore } from "@/store/missionStore";
 import { useEffect, useMemo } from "react";
 

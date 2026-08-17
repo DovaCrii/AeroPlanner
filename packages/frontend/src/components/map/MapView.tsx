@@ -5,15 +5,21 @@ import Map, {
   Popup,
   useMap,
   MapMouseEvent,
-} from "react-map-gl/mapbox";
-import type { LngLatBoundsLike } from "mapbox-gl";
-import mapboxgl from "mapbox-gl";
-import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
-import "mapbox-gl/dist/mapbox-gl.css";
-import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+} from "react-map-gl/maplibre";
+import type { LngLatBoundsLike } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { useMissionStore } from "@/store/missionStore";
 import { useConfigStore } from "@/store/configStore";
 import { usePreferencesStore } from "@/store/preferencesStore";
+import {
+  getMapStyle,
+  VECTOR_SOURCE_ID,
+  TERRAIN_SOURCE_ID,
+  TERRAIN_TILES,
+  TERRAIN_ATTRIBUTION,
+} from "@/lib/mapStyles";
+import type { MapStyleName } from "@/lib/mapStyles";
+import { GeocoderControl } from "./GeocoderControl";
 import { getObstacleWarnings } from "@/lib/geo";
 import { WaypointMarker } from "./WaypointMarker";
 import { PoiMarker } from "./PoiMarker";
@@ -47,26 +53,23 @@ function SceneSetup({ is3D, mapStyle }: { is3D: boolean; mapStyle: string }) {
       if (!m.isStyleLoaded()) return;
       if (m.getLayer("3d-buildings")) return;
 
-      // Ensure we have a source with building data.
-      // The "composite" source in satellite styles may not include the
-      // building source-layer, so add a dedicated vector tile source.
-      let buildingSource = "composite";
-      const style = m.getStyle();
-      const compositeSource = style?.sources?.["composite"] as any;
-      const hasBuildingInComposite = compositeSource?.url?.includes(
-        "mapbox.mapbox-streets",
-      );
-      if (!hasBuildingInComposite) {
-        if (!m.getSource("mapbox-streets")) {
-          m.addSource("mapbox-streets", {
-            type: "vector",
-            url: "mapbox://mapbox.mapbox-streets-v8",
-          });
-        }
-        buildingSource = "mapbox-streets";
+      // Both styles carry the OpenMapTiles vector source, which is where the
+      // "building" source-layer lives. The satellite style declares it
+      // explicitly for this reason — see lib/mapStyles.ts.
+      //
+      // `styledata` also fires mid-swap, when MapLibre reports the style as
+      // loaded but getStyle() still throws. Hence the guard: a failed read here
+      // just means "not ready yet", and the next event will retry.
+      if (!m.getSource(VECTOR_SOURCE_ID)) return;
+      const buildingSource = VECTOR_SOURCE_ID;
+
+      let layers: ReturnType<typeof m.getStyle>["layers"] | undefined;
+      try {
+        layers = m.getStyle()?.layers;
+      } catch {
+        return;
       }
 
-      const layers = style?.layers;
       let labelLayerId: string | undefined;
       if (layers) {
         for (const layer of layers) {
@@ -139,40 +142,6 @@ function SceneSetup({ is3D, mapStyle }: { is3D: boolean; mapStyle: string }) {
       }, 600);
     }
   }, [map, is3D]);
-
-  return null;
-}
-
-/** Adds a geocoding search box to the map (top-left). */
-function GeocoderControl() {
-  const { current: map } = useMap();
-  const mapboxToken = useConfigStore((s) => s.mapboxToken);
-  const geocoderRef = useRef<MapboxGeocoder | null>(null);
-
-  useEffect(() => {
-    if (!map || !mapboxToken || geocoderRef.current) return;
-    const m = map.getMap();
-
-    const geocoder = new MapboxGeocoder({
-      accessToken: mapboxToken,
-      mapboxgl: mapboxgl as any,
-      marker: false,
-      collapsed: true,
-      placeholder: "Search location...",
-    });
-
-    m.addControl(geocoder, "top-left");
-    geocoderRef.current = geocoder;
-
-    return () => {
-      try {
-        m.removeControl(geocoder);
-      } catch {
-        // DOM already detached — ignore
-      }
-      geocoderRef.current = null;
-    };
-  }, [map, mapboxToken]);
 
   return null;
 }
@@ -460,7 +429,6 @@ function PoiPointingLines({ is3D }: { is3D: boolean }) {
 }
 
 export function MapView() {
-  const mapboxToken = useConfigStore((s) => s.mapboxToken);
   const defaultMapView = useConfigStore((s) => s.defaultMapView);
   const waypoints = useMissionStore((s) => s.waypoints);
   const pois = useMissionStore((s) => s.pois);
@@ -476,10 +444,8 @@ export function MapView() {
   const addPoi = useMissionStore((s) => s.addPoi);
   const addObstacle = useMissionStore((s) => s.addObstacle);
   const vizPrefs = usePreferencesStore((s) => s.preferences?.visualization);
-  const [mapStyle, setMapStyle] = useState(
-    vizPrefs?.mapStyle === "street"
-      ? "mapbox://styles/mapbox/dark-v11"
-      : "mapbox://styles/mapbox/satellite-streets-v12",
+  const [mapStyle, setMapStyle] = useState<MapStyleName>(
+    vizPrefs?.mapStyle === "street" ? "street" : "satellite",
   );
   const [is3D, setIs3D] = useState(vizPrefs?.viewMode === "3d");
   const [buildingPopup, setBuildingPopup] = useState<BuildingPopupData | null>(
@@ -560,18 +526,9 @@ export function MapView() {
       ? "crosshair"
       : "grab";
 
-  if (!mapboxToken) {
-    return (
-      <div className="relative h-full w-full flex items-center justify-center bg-background text-muted-foreground">
-        <p>Mapbox token not configured. Add MAPBOX_TOKEN to your .env file.</p>
-      </div>
-    );
-  }
-
   return (
     <div className={`relative h-full w-full ${cursorClass}`}>
       <Map
-        mapboxAccessToken={mapboxToken}
         initialViewState={{
           longitude: defaultMapView.longitude,
           latitude: defaultMapView.latitude,
@@ -579,20 +536,24 @@ export function MapView() {
           pitch: 0,
         }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle={mapStyle}
+        mapStyle={getMapStyle(mapStyle)}
         cursor={cursor}
         onClick={handleClick}
         doubleClickZoom={false}
         id="main-map"
-        terrain={is3D ? { source: "mapbox-dem", exaggeration: 1 } : undefined}
+        terrain={
+          is3D ? { source: TERRAIN_SOURCE_ID, exaggeration: 1 } : undefined
+        }
       >
         {/* DEM source — always present so terrain prop can reference it */}
         <Source
-          id="mapbox-dem"
+          id={TERRAIN_SOURCE_ID}
           type="raster-dem"
-          url="mapbox://mapbox.mapbox-terrain-dem-v1"
-          tileSize={512}
-          maxzoom={14}
+          tiles={TERRAIN_TILES}
+          encoding="terrarium"
+          tileSize={256}
+          maxzoom={15}
+          attribution={TERRAIN_ATTRIBUTION}
         />
         <FitBoundsOnLoad />
         <GeocoderControl />
@@ -663,16 +624,14 @@ export function MapView() {
       {/* Style switcher + 2D/3D toggle */}
       <div className="absolute bottom-4 left-4 z-10 flex gap-1">
         <button
-          className={`px-2 py-1 text-xs rounded ${mapStyle.includes("dark") ? "bg-primary text-primary-foreground" : "bg-background/90 text-foreground border border-border"}`}
-          onClick={() => setMapStyle("mapbox://styles/mapbox/dark-v11")}
+          className={`px-2 py-1 text-xs rounded ${mapStyle === "street" ? "bg-primary text-primary-foreground" : "bg-background/90 text-foreground border border-border"}`}
+          onClick={() => setMapStyle("street")}
         >
           Street
         </button>
         <button
-          className={`px-2 py-1 text-xs rounded ${mapStyle.includes("satellite") ? "bg-primary text-primary-foreground" : "bg-background/90 text-foreground border border-border"}`}
-          onClick={() =>
-            setMapStyle("mapbox://styles/mapbox/satellite-streets-v12")
-          }
+          className={`px-2 py-1 text-xs rounded ${mapStyle === "satellite" ? "bg-primary text-primary-foreground" : "bg-background/90 text-foreground border border-border"}`}
+          onClick={() => setMapStyle("satellite")}
         >
           Satellite
         </button>

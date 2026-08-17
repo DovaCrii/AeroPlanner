@@ -13,9 +13,11 @@
 
 ## Por dónde se empieza
 
-**Fase 0.** El código base ya está incorporado y las auditorías están hechas.
-Queda cerrar `F0.6`, `F0.8` y `F0.9`, y ejecutar la migración a MapLibre
-(`F0.10`) que las auditorías dejaron como bloqueador de despliegue.
+**Fase 0.** El código base está incorporado, las cuatro auditorías hechas y la
+migración a MapLibre cerrada: la aplicación ya levanta sin ningún token. Quedan
+`F0.8` (WebODM) y **`F0.9`**, que es la prioridad — verificar que el KMZ que
+genera lo acepte el control real es el único riesgo que todavía puede invalidar
+la premisa de haber partido de este código.
 
 ---
 
@@ -24,18 +26,18 @@ Queda cerrar `F0.6`, `F0.8` y `F0.9`, y ejecutar la migración a MapLibre
 **Objetivo de salida:** una instancia corriendo con la que ya se puede planificar
 una misión y exportar un KMZ, más un informe de qué trae el código por dentro.
 
-| #       | Tarea                                                                                                                               | Estado           |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| `F0.1`  | Incorporar el código de DroneRoute con su historial                                                                                 | ✅               |
-| `F0.2`  | Estructura: **este repo absorbe el código**, con `upstream` como remoto para traer mejoras                                          | ✅               |
-| `F0.3`  | Build local del monorepo (`npm install && npm run build`) verde en los 4 paquetes                                                   | ✅               |
-| `F0.4`  | **Auditoría A — generación de grilla**                                                                                              | ✅ ver hallazgos |
-| `F0.5`  | **Auditoría B — mapa y elevación**                                                                                                  | ✅ ver hallazgos |
-| `F0.6`  | **Auditoría C — autenticación:** el self-host es instancia personal de una cuenta; qué cuesta habilitar multiusuario                | ⬜               |
-| `F0.7`  | **Auditoría D — modelo de misión interno** (`packages/shared/src/types.ts`) frente al contrato de `docs/INTEGRATION_AEROCONTROL.md` | ⬜               |
-| `F0.8`  | Desplegar **WebODM** como contenedor aparte (Nivel 1 del visor: procesar y ver ortofoto y nube desde ya, sin escribir código)       | ⬜               |
-| `F0.9`  | Verificar el KMZ exportado **en el control real** y su importación en AeroControl (`/geo/plans/import/`)                            | ⬜               |
-| `F0.10` | **Migrar de Mapbox a MapLibre** — bloqueador de despliegue, ver abajo                                                               | ⬜               |
+| #       | Tarea                                                                                                                         | Estado           |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `F0.1`  | Incorporar el código de DroneRoute con su historial                                                                           | ✅               |
+| `F0.2`  | Estructura: **este repo absorbe el código**, con `upstream` como remoto para traer mejoras                                    | ✅               |
+| `F0.3`  | Build local del monorepo (`npm install && npm run build`) verde en los 4 paquetes                                             | ✅               |
+| `F0.4`  | **Auditoría A — generación de grilla**                                                                                        | ✅ ver hallazgos |
+| `F0.5`  | **Auditoría B — mapa y elevación**                                                                                            | ✅ ver hallazgos |
+| `F0.6`  | **Auditoría C — autenticación y multiusuario**                                                                                | ✅ ver hallazgos |
+| `F0.7`  | **Auditoría D — modelo de misión interno** (`packages/shared/src/types.ts`)                                                   | ✅ ver hallazgos |
+| `F0.8`  | Desplegar **WebODM** como contenedor aparte (Nivel 1 del visor: procesar y ver ortofoto y nube desde ya, sin escribir código) | ⬜               |
+| `F0.9`  | Verificar el KMZ exportado **en el control real** y su importación en AeroControl (`/geo/plans/import/`)                      | ⬜               |
+| `F0.10` | **Migrar de Mapbox a MapLibre** — ya no hace falta ningún token                                                               | ✅               |
 
 **Criterio de aceptación:** el KMZ generado por la instancia local vuela desde el
 control, y el mismo archivo importa limpio en AeroControl.
@@ -51,44 +53,103 @@ cálculo de intervalo de disparo.** Consecuencia: la Fase 1 no es "conectar el
 motor a la grilla existente", es **construir el motor completo** y sustituir el
 parámetro manual. El alcance de la Fase 1 sube.
 
-**`F0.5` — No hay terreno. En absoluto.** El código usa `mapbox-gl` v3 con
-`MAPBOX_TOKEN` **obligatorio para renderizar el mapa**, con estilos
-`satellite-streets-v12` y `dark-v11`, edificios 3D extruidos desde
-`mapbox.mapbox-streets-v8`, y el geocoder de Mapbox. **No hay ninguna fuente
-`raster-dem`, ni `setTerrain`, ni muestreo de elevación.** El "elevation chart"
-grafica la altitud programada de los waypoints, no el perfil del terreno.
+**`F0.5` — Todo el mapa dependía de Mapbox, terreno incluido.** El código usaba
+`mapbox-gl` v3 con `MAPBOX_TOKEN` **obligatorio para renderizar el mapa** (no
+solo el 3D), con estilos `satellite-streets-v12` y `dark-v11`, edificios 3D
+extruidos desde `mapbox.mapbox-streets-v8`, geocoder de Mapbox y terreno desde
+`mapbox://mapbox.mapbox-terrain-dem-v1`.
+
+> Corrección: una versión anterior de este documento afirmó que no había terreno.
+> Era falso — sí existía `raster-dem` con `setTerrain`. Lo que no existe es
+> **muestreo de elevación por waypoint**, que es otra cosa: el terreno se dibuja,
+> pero nadie consulta la altura del suelo para calcular nada.
+
 Consecuencias:
 
-1. La vista 3D es pitch + edificios extruidos, no un terreno real. La descripción
-   de "3D con terreno" del producto original se refiere a eso.
-2. La Fase 3 (terrain following) es **construcción completa**, sin nada que
-   reutilizar.
-3. La migración a MapLibre es **más simple** de lo temido — no hay terreno que
-   portar — pero exige elegir proveedor de teselas.
+1. El "elevation chart" grafica la altitud programada de los waypoints, no el
+   perfil del suelo.
+2. La Fase 3 (terrain following) sigue siendo **construcción completa**: hay
+   terreno visual, no datos de terreno para calcular. La buena noticia es que
+   MapLibre expone `queryTerrainElevation()`, que da un camino directo.
+3. La migración a MapLibre debía reemplazar **cuatro** piezas, no una: estilo
+   base, imagen satelital, fuente de edificios y fuente DEM.
+
+**`F0.6` — El multiusuario ya funciona; el riesgo es otro.** El supuesto de
+"instancia personal de una sola cuenta" era falso: el registro con correo y
+contraseña (`POST /auth/register`, con rate limit) está disponible **precisamente
+en modo self-hosted** — lo que se desactiva ahí es el ingreso con Google, que es
+solo para la versión en la nube. Hay `bcrypt`, JWT de 7 días y un flag `isAdmin`
+en el token. No hace falta trabajo para tener varios usuarios.
+
+El riesgo real es otro: **si no se define `JWT_SECRET`, el modo self-hosted
+arranca igual con un secreto por defecto que está publicado en el código fuente**.
+Con el registro abierto, cualquiera que alcance la instancia puede crear cuenta, y
+con ese secreto conocido puede firmarse un token con `isAdmin: true`. Para el
+despliegue interno, definir `JWT_SECRET` (≥32 caracteres, aleatorio) **no es
+opcional**.
+
+**`F0.7` — El modelo de misión es un modelo DJI, no un modelo de dominio.**
+`MissionConfig` está lleno de conceptos WPML del fabricante (`droneEnumValue`,
+`payloadEnumValue`, `flyToWaylineMode`, `executeRCLostAction`), justo lo que la
+convención de `AGENTS.md` prohíbe en el dominio. Y `DRONE_MODELS` **no es un
+catálogo de aeronaves**: son códigos numéricos para el archivo KMZ, sin sensor,
+focal, resolución ni autonomía. El Mavic 3E ya está (enum 77), lo que sirve para
+exportar, no para calcular.
+
+Lo aprovechable: `heightMode` ya distingue `EGM96` / `relativeToStartPoint` /
+`aboveGroundLevel`, y `maxBatteryMinutes` existe en la configuración.
+
+Consecuencia: `packages/mission-core` introduce el modelo propio y el actual queda
+degradado a **capa de exportación DJI**. Falta además el nivel de _proyecto_ —
+`Mission` es plana, sin agrupación — que la integración con AeroControl necesita
+para colgar `cost_center_id`.
+
+**Ojo con el nombre "DGAC" en este código.** `services/airspace/provider-dgac.ts`
+es la **Direction Générale de l'Aviation Civile de Francia**, consultada vía la
+Géoplateforme francesa. No tiene relación con la DGAC de Chile. Los otros
+proveedores son ENAIRE (España) y NATS (Reino Unido): **no hay cobertura de
+espacio aéreo chileno**, y esa es una pieza a construir si algún día se necesita.
 
 **Infraestructura ajena eliminada.** El merge traía el `CNAME` de `droneroute.io`,
 `fly.toml` y un workflow de Fly que se disparaba en cada push, la publicación a
 `fcsonline/droneroute` en Docker Hub, y el auto-merge de dependabot. Todo
 eliminado; se conservó `ci.yml`.
 
-### `F0.10` — Migración de Mapbox a MapLibre
+### `F0.10` — Migración de Mapbox a MapLibre ✅ (2026-08-17)
 
-Bloquea el despliegue interno: hoy **la aplicación no arranca sin un token de
-Mapbox**, lo que contradice el local-first del proyecto. Alcance medido: 15
-archivos, ~81 ocurrencias, concentradas en `MapView.tsx`, `index.css` (clases
-`.mapboxgl-*`), `SharedMissionPage.tsx`, `configStore.ts` y `Marker3D.tsx`.
+Bloqueaba el despliegue interno: la aplicación no arrancaba sin un token de
+Mapbox, lo que contradecía el local-first del proyecto. **Ninguna fuente exige
+hoy cuenta, token ni cuota.**
 
-| Pieza            | Hoy                          | Reemplazo                                                              |
-| ---------------- | ---------------------------- | ---------------------------------------------------------------------- |
-| Librería         | `mapbox-gl` v3 (propietaria) | `maplibre-gl` (BSD); `react-map-gl/maplibre` ya está soportado         |
-| Estilo base      | `mapbox://styles/mapbox/*`   | Teselas vectoriales libres (OpenFreeMap / Protomaps) o teselas propias |
-| Imagen satelital | Mapbox satellite             | Por decidir: ortofoto propia (Fase 6) o proveedor libre                |
-| Edificios 3D     | `mapbox.mapbox-streets-v8`   | Capa `building` de OpenMapTiles                                        |
-| Geocoder         | `@mapbox/mapbox-gl-geocoder` | Nominatim u otro; función secundaria                                   |
-| CSS              | `.mapboxgl-*`                | `.maplibregl-*`                                                        |
+| Pieza            | Antes                        | Ahora                                                    |
+| ---------------- | ---------------------------- | -------------------------------------------------------- |
+| Librería         | `mapbox-gl` v3 (propietaria) | `maplibre-gl` 5.x (BSD) vía `react-map-gl/maplibre`      |
+| Estilo base      | `mapbox://styles/mapbox/*`   | OpenFreeMap Liberty (teselas vectoriales OSM)            |
+| Imagen satelital | Mapbox satellite             | Esri World Imagery — el proveedor que ya usa AeroControl |
+| Edificios 3D     | `mapbox.mapbox-streets-v8`   | Capa `building` de OpenMapTiles (OpenFreeMap)            |
+| Terreno          | `mapbox.mapbox-terrain-dem`  | AWS Terrain Tiles, codificación `terrarium`              |
+| Geocoder         | `@mapbox/mapbox-gl-geocoder` | Nominatim, en `GeocoderControl.tsx`                      |
+| CSS              | `.mapboxgl-*`                | `.maplibregl-*`                                          |
 
-**Criterio de aceptación:** la aplicación levanta y planifica una misión completa
-**sin ninguna variable de entorno de un proveedor comercial**.
+Las fuentes viven todas en `packages/frontend/src/lib/mapStyles.ts`: si algún día
+se sirven teselas propias, ese es el único archivo que cambia.
+
+**Verificado:** las cinco fuentes responden 200; el satelital y el 3D con relieve
+renderizan (capturas en el PR), y la atribución confirma el cambio de proveedor
+en cada modo. El render de teselas **vectoriales** no se pudo capturar en headless
+con WebGL por software — se validó por la atribución, que sí cambia a OpenFreeMap.
+
+**Tres tropiezos que vale registrar:**
+
+1. `maplibre-gl` v6 (lo que instala npm por defecto) **rompe con `react-map-gl`
+   8.1.1**: la app quedaba en blanco con `Cannot read properties of undefined
+(reading 'center')`. Hay que fijar la v5.
+2. npm hoistea `@vis.gl/react-maplibre` a la raíz pero deja `maplibre-gl` dentro
+   del paquete, así que la librería no resuelve su propio peer. Se fija con un
+   alias en `vite.config.ts`.
+3. MapLibre **no tiene `map.project(lngLat, altitude)`**, que Mapbox GL v3 sí
+   ofrece y que usaba la línea vertical del waypoint. Se sustituyó por una
+   aproximación desde la escala del mapa y el pitch.
 
 ---
 
@@ -221,12 +282,12 @@ No entran sin que el usuario lo pida explícitamente:
 
 ## Riesgos abiertos
 
-| Riesgo                                                        | Impacto                                                  | Estado                                                                                                                             |
-| ------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| El mapa depende de un token comercial                         | Bloquea el despliegue interno sin costo                  | ⚠️ **Confirmado en `F0.5`** — es peor de lo previsto: no es solo el 3D, el mapa entero no renderiza sin token. Mitigación: `F0.10` |
-| La generación de grilla no es GSD-driven                      | La Fase 1 pasa de "conectar" a "construir"               | ⚠️ **Confirmado en `F0.4`** — no hay modelo de cámara ni traslapes. El motor se construye entero                                   |
-| No hay datos de terreno que reutilizar                        | La Fase 3 es construcción completa                       | ⚠️ **Confirmado en `F0.5`** — sin `raster-dem` ni muestreo de elevación                                                            |
-| El KMZ no lo acepta el control de la flota                    | Invalidaría la premisa completa de partir de este código | Abierto — se verifica en `F0.9` con el control real, **antes** de invertir en las demás fases                                      |
-| Autonomía de batería estimada vs real                         | Una misión que "cabía" se corta en terreno               | Abierto — reserva configurable, y ajuste con datos reales de vuelo cuando existan                                                  |
-| Deriva entre el modelo de misión y el canónico de AeroControl | Integración cara al final                                | Abierto — se cierra en `F0.7`                                                                                                      |
-| El upstream avanza y el fork se queda atrás                   | Se pierden correcciones de seguridad y mejoras           | Abierto — `git fetch upstream` periódico; publicó 3 versiones en un mes                                                            |
+| Riesgo                                                        | Impacto                                                  | Estado                                                                                                                            |
+| ------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| El mapa depende de un token comercial                         | Bloqueaba el despliegue interno sin costo                | ✅ **Cerrado en `F0.10`** — sin tokens: OpenFreeMap, Esri y AWS Terrain Tiles                                                     |
+| La generación de grilla no es GSD-driven                      | La Fase 1 pasa de "conectar" a "construir"               | ⚠️ **Confirmado en `F0.4`** — no hay modelo de cámara ni traslapes. El motor se construye entero                                  |
+| No hay muestreo de elevación                                  | La Fase 3 es construcción completa                       | ⚠️ **Confirmado en `F0.5`** — hay terreno visual, pero nadie consulta la altura del suelo. `queryTerrainElevation()` es el camino |
+| El KMZ no lo acepta el control de la flota                    | Invalidaría la premisa completa de partir de este código | Abierto — se verifica en `F0.9` con el control real, **antes** de invertir en las demás fases                                     |
+| Autonomía de batería estimada vs real                         | Una misión que "cabía" se corta en terreno               | Abierto — reserva configurable, y ajuste con datos reales de vuelo cuando existan                                                 |
+| Deriva entre el modelo de misión y el canónico de AeroControl | Integración cara al final                                | Abierto — se cierra en `F0.7`                                                                                                     |
+| El upstream avanza y el fork se queda atrás                   | Se pierden correcciones de seguridad y mejoras           | Abierto — `git fetch upstream` periódico; publicó 3 versiones en un mes                                                           |

@@ -37,16 +37,16 @@ de la operación.
 
 ## Qué resuelve
 
-| Módulo | Qué hace | Estado |
-| --- | --- | --- |
-| **Planificación** | Waypoints, POI, grid survey, órbita y escaneo de fachada | Heredado |
-| **Exportación** | DJI WPML/KMZ listo para el control, con carga por USB al RC | Heredado |
-| **Fotogrametría** | GSD ↔ altura de vuelo, footprint, traslapes, separación de líneas, intervalo de disparo y velocidad recomendada | Por construir |
-| **Corredores** | Rutas paralelas sobre un eje: líneas eléctricas, caminos, corredores mineros | Por construir |
-| **Terreno** | DEM/DSM, vuelo a altura constante sobre el suelo, clearance mínimo y perfil | Por construir |
-| **Simulación** | Recorrido animado con línea de tiempo, telemetría estimada y footprints de foto | Por construir |
-| **Validación** | Autonomía y baterías, clearance, y contraste contra la envolvente del permiso DGAC | Por construir |
-| **Visor de resultados** | Ortofotos (COG) y nubes de puntos (COPC/Potree) del vuelo procesado | Por construir |
+| Módulo                  | Qué hace                                                                                                        | Estado        |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- | ------------- |
+| **Planificación**       | Waypoints, POI, grid survey, órbita y escaneo de fachada                                                        | Heredado      |
+| **Exportación**         | DJI WPML/KMZ listo para el control, con carga por USB al RC                                                     | Heredado      |
+| **Fotogrametría**       | GSD ↔ altura de vuelo, footprint, traslapes, separación de líneas, intervalo de disparo y velocidad recomendada | Por construir |
+| **Corredores**          | Rutas paralelas sobre un eje: líneas eléctricas, caminos, corredores mineros                                    | Por construir |
+| **Terreno**             | DEM/DSM, vuelo a altura constante sobre el suelo, clearance mínimo y perfil                                     | Por construir |
+| **Simulación**          | Recorrido animado con línea de tiempo, telemetría estimada y footprints de foto                                 | Por construir |
+| **Validación**          | Autonomía y baterías, clearance, y contraste contra la envolvente del permiso DGAC                              | Por construir |
+| **Visor de resultados** | Ortofotos (COG) y nubes de puntos (COPC/Potree) del vuelo procesado                                             | Por construir |
 
 ## Cómo se relaciona con AeroControl
 
@@ -83,10 +83,10 @@ historial completo: la aplicación se levanta y planifica misiones DJI hoy. Lo q
 falta es todo lo que define a AeroPlanner — el motor fotogramétrico, los
 corredores, el terreno, la simulación y la validación contra el permiso.
 
-**Advertencia de la Fase 0:** el código heredado renderiza el mapa con `mapbox-gl`
-y **exige un `MAPBOX_TOKEN` para funcionar**. La migración a MapLibre está
-decidida (ver abajo) pero todavía no hecha: hasta entonces hace falta un token de
-Mapbox para levantar la aplicación.
+**Ya no hace falta ningún token de mapas.** El código heredado exigía un
+`MAPBOX_TOKEN` para renderizar; la migración a MapLibre está hecha y las fuentes
+son OpenFreeMap (callejero), Esri (satelital) y AWS Terrain Tiles (relieve),
+todas sin cuenta ni cuota.
 
 Lo pendiente vive en dos documentos, no en este README:
 
@@ -107,8 +107,10 @@ cp .env.example .env
 npm run dev
 ```
 
-Antes de levantar hay que editar el `.env`: poner un `JWT_SECRET` aleatorio de
-verdad y, mientras dure la dependencia de Mapbox, un `MAPBOX_TOKEN` válido.
+Antes de levantar hay que editar el `.env` y poner un `JWT_SECRET` aleatorio de
+verdad (mínimo 32 caracteres). **No es opcional:** sin él, el modo self-hosted
+arranca con un secreto por defecto que está publicado en el código fuente, y
+cualquiera podría firmarse un token de administrador.
 
 ### Comandos frecuentes
 
@@ -128,9 +130,10 @@ No se reabren sin que el usuario lo pida (el fundamento está en `docs/`):
 - **Se parte del código de DroneRoute**, no de un desarrollo desde cero — da un
   planificador usable de inmediato y ya resuelve el export DJI WPML/KMZ, que es
   el requisito crítico de la flota.
-- **Migración de Mapbox a MapLibre** — `mapbox-gl` v3 es de licencia propietaria,
-  exige token y factura por cargas de mapa. MapLibre (BSD) con teselas libres es
-  coherente con el local-first del proyecto.
+- **MapLibre en vez de Mapbox** (hecho) — `mapbox-gl` v3 es de licencia
+  propietaria, exige token y factura por cargas de mapa. Las fuentes viven en
+  `packages/frontend/src/lib/mapStyles.ts`; ese es el único archivo a tocar si
+  algún día se sirven teselas propias.
 - **Sin CesiumJS en el MVP** — el terreno 3D servido por Cesium ion tiene costo
   comercial.
 - **Simulación cinemática, no física** — PX4 SITL y Gazebo quedan fuera: no

@@ -48,27 +48,40 @@ publicar: el `CNAME` de `droneroute.io`, `fly.toml` y su workflow de despliegue
 `fcsonline/droneroute` en Docker Hub, y el auto-merge de dependabot. Se conservó
 `ci.yml` (build y lint en PR).
 
+## Migración a MapLibre: hecha (`F0.10`)
+
+La aplicación ya no necesita ningún token. Fuentes elegidas: **OpenFreeMap**
+(callejero vectorial), **Esri World Imagery** (satelital — el mismo proveedor que
+ya usa AeroControl, así que no entra un tercero nuevo) y **AWS Terrain Tiles**
+(relieve). Todas viven en `packages/frontend/src/lib/mapStyles.ts`.
+
+Tres cosas que costaron y conviene no reaprender:
+
+1. `maplibre-gl` **v6 rompe con `react-map-gl` 8.1.1** — la app queda en blanco.
+   Está fijado a v5; no subir sin verificar.
+2. npm deja `maplibre-gl` dentro del paquete y `@vis.gl/react-maplibre` en la
+   raíz, así que la librería no resuelve su peer. Hay un alias en
+   `vite.config.ts` que lo arregla; no borrarlo.
+3. MapLibre no tiene `map.project(lngLat, altitude)`. La línea vertical del
+   waypoint ahora se aproxima con la escala del mapa y el pitch.
+
 ## Qué sigue, exactamente
 
-**`F0.10`, la migración a MapLibre**, es lo más urgente: sin ella no hay
-despliegue interno posible sin contratar Mapbox. Requiere una decisión previa —
-**de dónde salen las teselas base y la imagen satelital** (OpenFreeMap,
-Protomaps, teselas propias), que es donde el usuario tiene que opinar.
+**`F0.9` es la prioridad:** verificar que el KMZ que genera la aplicación **lo
+acepta el control real de la flota**. Es el único riesgo que todavía puede
+invalidar la premisa de haber partido de este código, y hasta despejarlo toda
+inversión en las fases siguientes es apuesta. Necesita a alguien con el RC
+delante.
 
-En paralelo, sin dependencias entre sí:
+Después, sin dependencias entre sí:
 
-- **`F0.9`** — verificar que el KMZ que genera la aplicación **lo acepta el
-  control real**. Es el único riesgo que todavía puede invalidar la premisa de
-  haber partido de este código; conviene despejarlo pronto.
 - **`F0.8`** — desplegar WebODM en su contenedor: procesar y ver ortofoto y nube
   de puntos sin escribir una línea.
-- **`F0.6`** y **`F0.7`** — auditorías de autenticación multiusuario y del modelo
-  de misión frente al contrato con AeroControl.
+- **Fase 1** — el motor fotogramétrico, que las auditorías confirmaron que hay
+  que construir entero.
 
 ## Decisiones pendientes que solo el usuario puede tomar
 
-- **Proveedor de teselas** para la migración a MapLibre (afecta calidad visual y
-  si hace falta servir teselas propias).
 - **Nombre de despliegue y dominio** (`planner.<dominio>`), y si comparte VM con
   AeroControl.
 - **Autonomía operacional y reserva de batería** por modelo de aeronave: son

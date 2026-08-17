@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useMap } from "react-map-gl/mapbox";
-import mapboxgl from "mapbox-gl";
+import { useMap } from "react-map-gl/maplibre";
+import { Marker } from "maplibre-gl";
 
 interface Marker3DProps {
   longitude: number;
@@ -34,7 +34,7 @@ export function Marker3D({
   children,
 }: Marker3DProps) {
   const { current: mapRef } = useMap();
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const markerRef = useRef<Marker | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const callbacksRef = useRef({ onDragStart, onDrag, onDragEnd });
   callbacksRef.current = { onDragStart, onDrag, onDragEnd };
@@ -50,7 +50,7 @@ export function Marker3D({
     const map = mapRef.getMap();
 
     const el = containerRef.current!;
-    const marker = new mapboxgl.Marker({
+    const marker = new Marker({
       element: el,
       anchor,
       draggable,
