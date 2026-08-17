@@ -13,11 +13,15 @@
 
 ## Por dónde se empieza
 
-**Fase 0.** El código base está incorporado, las cuatro auditorías hechas y la
-migración a MapLibre cerrada: la aplicación ya levanta sin ningún token. Quedan
-`F0.8` (WebODM) y **`F0.9`**, que es la prioridad — verificar que el KMZ que
-genera lo acepte el control real es el único riesgo que todavía puede invalidar
-la premisa de haber partido de este código.
+**Fases 0 y 1 cerradas**, salvo `F0.9`. La aplicación levanta sin ningún token,
+el motor fotogramétrico existe y la grilla se calcula por traslape.
+
+**`F0.9` es la prioridad y no se puede automatizar:** verificar que el KMZ que
+genera la aplicación lo acepte el control real de la flota. Es el único riesgo
+que todavía puede invalidar la premisa de haber partido de este código.
+
+En paralelo se avanza la **Fase 2 (corredores)**. `F0.8` y la Fase 6 salieron del
+alcance por falta de hardware de procesamiento — ver la nota bajo `F0.8`.
 
 ---
 
@@ -26,18 +30,18 @@ la premisa de haber partido de este código.
 **Objetivo de salida:** una instancia corriendo con la que ya se puede planificar
 una misión y exportar un KMZ, más un informe de qué trae el código por dentro.
 
-| #       | Tarea                                                                                                                         | Estado           |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| `F0.1`  | Incorporar el código de DroneRoute con su historial                                                                           | ✅               |
-| `F0.2`  | Estructura: **este repo absorbe el código**, con `upstream` como remoto para traer mejoras                                    | ✅               |
-| `F0.3`  | Build local del monorepo (`npm install && npm run build`) verde en los 4 paquetes                                             | ✅               |
-| `F0.4`  | **Auditoría A — generación de grilla**                                                                                        | ✅ ver hallazgos |
-| `F0.5`  | **Auditoría B — mapa y elevación**                                                                                            | ✅ ver hallazgos |
-| `F0.6`  | **Auditoría C — autenticación y multiusuario**                                                                                | ✅ ver hallazgos |
-| `F0.7`  | **Auditoría D — modelo de misión interno** (`packages/shared/src/types.ts`)                                                   | ✅ ver hallazgos |
-| `F0.8`  | Desplegar **WebODM** como contenedor aparte (Nivel 1 del visor: procesar y ver ortofoto y nube desde ya, sin escribir código) | ⬜               |
-| `F0.9`  | Verificar el KMZ exportado **en el control real** y su importación en AeroControl (`/geo/plans/import/`)                      | ⬜               |
-| `F0.10` | **Migrar de Mapbox a MapLibre** — ya no hace falta ningún token                                                               | ✅               |
+| #       | Tarea                                                                                                    | Estado                   |
+| ------- | -------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `F0.1`  | Incorporar el código de DroneRoute con su historial                                                      | ✅                       |
+| `F0.2`  | Estructura: **este repo absorbe el código**, con `upstream` como remoto para traer mejoras               | ✅                       |
+| `F0.3`  | Build local del monorepo (`npm install && npm run build`) verde en los 4 paquetes                        | ✅                       |
+| `F0.4`  | **Auditoría A — generación de grilla**                                                                   | ✅ ver hallazgos         |
+| `F0.5`  | **Auditoría B — mapa y elevación**                                                                       | ✅ ver hallazgos         |
+| `F0.6`  | **Auditoría C — autenticación y multiusuario**                                                           | ✅ ver hallazgos         |
+| `F0.7`  | **Auditoría D — modelo de misión interno** (`packages/shared/src/types.ts`)                              | ✅ ver hallazgos         |
+| `F0.8`  | ~~Desplegar **WebODM** como contenedor aparte~~                                                          | ❌ descartado, ver abajo |
+| `F0.9`  | Verificar el KMZ exportado **en el control real** y su importación en AeroControl (`/geo/plans/import/`) | ⬜                       |
+| `F0.10` | **Migrar de Mapbox a MapLibre** — ya no hace falta ningún token                                          | ✅                       |
 
 **Criterio de aceptación:** el KMZ generado por la instancia local vuela desde el
 control, y el mismo archivo importa limpio en AeroControl.
@@ -109,6 +113,47 @@ es la **Direction Générale de l'Aviation Civile de Francia**, consultada vía 
 Géoplateforme francesa. No tiene relación con la DGAC de Chile. Los otros
 proveedores son ENAIRE (España) y NATS (Reino Unido): **no hay cobertura de
 espacio aéreo chileno**, y esa es una pieza a construir si algún día se necesita.
+
+### `F0.8` descartado: AeroPlanner planifica, no procesa (2026-08-17)
+
+Decisión del usuario, y conviene entender la distinción porque el plan original
+las mezclaba bajo la misma palabra:
+
+|                                               | Qué es                                                            | Qué cuesta                                 |
+| --------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------ |
+| **Cálculo de planificación** (`mission-core`) | GSD, traslapes, separación de líneas, intervalo                   | Aritmética. Microsegundos, en el navegador |
+| **Procesamiento fotogramétrico** (WebODM)     | Reconstruir ortofoto, nube de puntos y DSM desde cientos de fotos | Horas de CPU y 16–64 GB de RAM             |
+
+**No hay hardware para lo segundo.** Con 8 GB de RAM, WebODM no pasa de unas 100
+imágenes; con 16 GB, de 100–300. Un vuelo del Mavic 3E produce fácilmente 500 o
+1000 fotos. Montar el contenedor sería instalar algo que no se puede correr.
+
+Consecuencias en el plan:
+
+- **`F0.8` sale.** Si algún día hace falta procesar, las vías son un equipo
+  dedicado o un servicio en la nube (WebODM Lightning, del mismo proyecto), y esa
+  es una decisión de presupuesto, no de código.
+- **La Fase 6 se mantiene, reformulada como visor puro.** Ver abajo.
+- **La Fase 3 no se toca.** El terrain following usa DEM público (AWS Terrain
+  Tiles, ya integrado); nunca dependió de procesar nada.
+
+**Nada de esto afecta a las Fases 1 a 5**, que es donde vive el producto:
+planificar, calcular, seguir el terreno, simular y validar contra el permiso.
+
+#### Visualizar no es procesar
+
+La distinción importa porque el visor **no** cae del lado caro. Abrir una
+ortofoto o una nube de puntos ya generadas es trabajo de la GPU del navegador,
+por streaming y a demanda:
+
+- Un **COG** se lee por rangos HTTP: el navegador pide solo las teselas del nivel
+  de zoom que está mirando, nunca el archivo completo.
+- Un **COPC** trae un octree interno: se descargan los puntos que caben en
+  pantalla, no los mil millones del archivo.
+
+Por eso cualquier aplicación de terceros muestra estos archivos sin pedir una
+estación de trabajo. AeroPlanner hará lo mismo: **carga y muestra lo que otro
+procesó**, y no intenta generarlo.
 
 **Infraestructura ajena eliminada.** El merge traía el `CNAME` de `droneroute.io`,
 `fly.toml` y un workflow de Fly que se disparaba en cada push, la publicación a
@@ -228,14 +273,78 @@ QGIS; las cifras deben coincidir. Tests unitarios puros, sin navegador.
 **Objetivo de salida:** planificar una línea eléctrica, un camino o un corredor
 minero sin dibujarlo waypoint por waypoint.
 
-| #      | Tarea                                                                                                         | Estado |
-| ------ | ------------------------------------------------------------------------------------------------------------- | ------ |
-| `F2.1` | Entrada del eje: dibujado en el mapa o importado desde KML                                                    | ⬜     |
-| `F2.2` | `packages/mission-core/corridor`: eje → buffer → 2–5 líneas paralelas con traslape correcto                   | ⬜     |
-| `F2.3` | Tratamiento de curvas y vértices cerrados (sin waypoints imposibles ni giros que la aeronave no pueda seguir) | ⬜     |
-| `F2.4` | Waypoints con orientación de cámara adecuada al corredor                                                      | ⬜     |
+| #      | Tarea                                                                                                         | Estado                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `F2.1` | Entrada del eje: arrastrando sobre el mapa                                                                    | ✅ eje recto; polilínea e importación KML pendientes |
+| `F2.2` | `packages/mission-core/corridor`: eje → líneas paralelas con la separación del motor fotogramétrico           | ✅                                                   |
+| `F2.3` | Tratamiento de curvas y vértices cerrados (sin waypoints imposibles ni giros que la aeronave no pueda seguir) | ✅                                                   |
+| `F2.4` | Waypoints con orientación de cámara adecuada al corredor                                                      | ✅                                                   |
 
 **Oráculo:** corredor real de faena, comparado contra el generado por GeoFlight.
+
+### El motor de corredores (`corridor/corridor.ts`)
+
+17 pruebas nuevas. Dos problemas que había que resolver bien:
+
+**Las esquinas se pinchan.** Desplazar una polilínea lateralmente no es mover
+cada punto en perpendicular: en un vértice hay que moverse por la bisectriz y
+estirar por `1 / cos(giro/2)`, o la línea desplazada se acorta en las curvas y
+deja de ser paralela. Verificado: un giro de 90° empuja la esquina exterior
+exactamente `√2 × separación`.
+
+**Ese estiramiento se dispara en una horquilla.** El factor tiende a infinito
+cuando el giro se acerca a 180°, y un vértice cerrado del eje mandaría un
+waypoint kilómetros afuera. Va limitado a 3×: deforma un poco la esquina, en vez
+de producir una misión imposible de volar.
+
+**Serpenteo por defecto.** Volar todas las líneas en el mismo sentido obliga a
+regresar en vacío al inicio de cada una — en un corredor largo eso es la mitad
+del vuelo. Alternando el sentido, cada giro cuesta una separación de línea. La
+diferencia está medida en las pruebas.
+
+Los offsets son simétricos respecto al eje: un número impar de líneas deja una
+por el centro, uno par lo cabalga. En ambos casos el corredor queda centrado en
+lo que el operador dibujó.
+
+### Waypoints del corredor (`corridor/waypoints.ts`)
+
+**Se camina por distancia, no por vértice.** Un eje dibujado a mano tiene
+vértices cada pocos metros en una curva y ninguno durante un kilómetro en la
+recta; la cámara tiene que disparar a intervalo constante sin importar cómo se
+dibujó. El recorrido acumula longitud de arco y arrastra el resto de un segmento
+al siguiente, así que el espaciado **no se reinicia en cada vértice** — ese es el
+error clásico, y hay una prueba que lo vigila.
+
+La última posición siempre recibe waypoint aunque quede a menos de un espaciado,
+para que la línea se vuele hasta el final en vez de cortarse antes.
+
+**Dos formas de apuntar la cámara:** `nadir` (gimbal a −90°, el estándar de
+mapeo) y `side`, que gira 90° para fotografiar una cara — una torre de alta
+tensión, un talud de corte. En modo lateral la aeronave sigue el eje y lo que
+cambia es hacia dónde mira la cámara.
+
+### En la interfaz
+
+**Corridor** entra al menú de plantillas (atajo `C`). Se arrastra sobre el mapa
+para fijar el eje y el panel pide altura, número de líneas, traslape lateral y
+frontal, y el modo de cámara. Debajo muestra lo que esos parámetros producen:
+GSD, ancho de corredor cubierto y separación entre líneas.
+
+Verificado con un eje de 2 km a 80 m y traslape 80/70:
+
+| Líneas | Ancho cubierto | Largo total | Giros | Waypoints |
+| ------ | -------------- | ----------- | ----- | --------- |
+| 1      | 113 m          | 1,99 km     | 0 m   | 119       |
+| 3      | 181 m          | 5,98 km     | 68 m  | 357       |
+| 5      | 249 m          | 9,97 km     | 136 m | 595       |
+
+Los giros salen exactamente `(N−1) × 34 m`, una separación de línea cada uno:
+la prueba de que el serpenteo hace lo que promete. La separación real entre
+disparos midió 17,0 m constante, igual al valor calculado.
+
+**Limitación conocida:** el eje es hoy un **tramo recto** (se arrastra de un
+punto a otro). El motor acepta polilíneas de N vértices, así que dibujar un eje
+quebrado o importarlo desde KML es cambiar la entrada, no el cálculo.
 
 ---
 
@@ -296,22 +405,31 @@ rechazando una misión con AGL por sobre la altura máxima del permiso.
 
 ---
 
-## FASE 6 — Visor de resultados (nivel 2)
+## FASE 6 — Visor de resultados
+
+**Visor puro: carga y muestra, nunca procesa.** Los archivos llegan ya generados
+—por un tercero, por un servicio en la nube o por un equipo prestado— y la
+aplicación los abre como lo hace cualquier herramienta comercial. Todo el trabajo
+ocurre en el navegador, por streaming: ver _Visualizar no es procesar_, arriba.
 
 **Objetivo de salida:** cerrar el ciclo — lo que produjo el vuelo alimenta la
 planificación del siguiente.
 
-| #      | Tarea                                                                                                                     | Estado |
-| ------ | ------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `F6.1` | Registro de productos por proyecto/misión: ortofoto, nube de puntos, DSM                                                  | ⬜     |
-| `F6.2` | Conversión a formatos web: GeoTIFF → **COG** (GDAL), LAZ → **COPC** (PDAL/Untwine)                                        | ⬜     |
-| `F6.3` | Ortofoto propia como capa base de planificación (georaster-layer-for-leaflet, o TiTiler si se necesitan teselas servidas) | ⬜     |
-| `F6.4` | **Potree** embebido para la nube de puntos                                                                                | ⬜     |
-| `F6.5` | El DSM propio como fuente del motor de terreno de `F3.3` — mejora directa del terrain following                           | ⬜     |
+| #      | Tarea                                                                                                               | Estado |
+| ------ | ------------------------------------------------------------------------------------------------------------------- | ------ |
+| `F6.1` | Cargar y registrar productos por proyecto/misión: ortofoto, nube de puntos, DSM — vengan de donde vengan            | ⬜     |
+| `F6.2` | Ortofoto (**COG**) como capa base de planificación, por rangos HTTP y sin servidor de teselas                       | ⬜     |
+| `F6.3` | Nube de puntos (**COPC**) en un visor embebido, con streaming del octree                                            | ⬜     |
+| `F6.4` | DSM cargado como fuente del motor de terreno de `F3.3` — mejor dato que los 30 m públicos                           | ⬜     |
+| `F6.5` | Aceptar también GeoTIFF y LAZ planos, avisando que conviene convertirlos a COG/COPC **fuera** de la app (QGIS/GDAL) | ⬜     |
 
-**Oráculo:** planificar un corredor sobre la ortofoto de un vuelo real; la nube
-COPC de ese mismo vuelo abre en el visor; el terrain following con DSM propio
-entrega clearances distintos y más realistas que con Copernicus 30 m.
+**Oráculo:** planificar un corredor sobre una ortofoto real cargada por el
+usuario; la nube de puntos de ese mismo vuelo abre y se navega con fluidez; el
+terrain following con el DSM cargado entrega clearances distintos —y más
+realistas— que con el DEM público.
+
+> **Límite explícito:** la aplicación no genera ortofotos, nubes ni DSM, y no
+> intentará hacerlo. Tampoco edita ni clasifica nubes de puntos. Solo visualiza.
 
 ---
 

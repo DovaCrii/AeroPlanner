@@ -51,6 +51,12 @@ Este repositorio **deriva de [DroneRoute](https://github.com/fcsonline/dronerout
    entra por el `MASTER_PLAN.md` de ese repositorio, no desde aquí.
 6. **Nunca se comparte la base de datos** entre ambas aplicaciones. La
    integración es por archivo KMZ primero y por REST después.
+7. **La aplicación planifica y visualiza; no procesa.** Calcular una misión es
+   aritmética que corre en el navegador. Reconstruir ortofotos, nubes de puntos o
+   DSM desde cientos de fotos pide horas de CPU y decenas de GB de RAM, y queda
+   fuera. Abrir productos ya generados sí entra — un COG se lee por rangos HTTP y
+   un COPC trae octree — porque el coste es del cliente y a demanda. **No agregar
+   pipelines de procesamiento.**
 
 ## Precedencia documental
 
@@ -152,12 +158,12 @@ Este proyecto es MIT y debe seguir siéndolo. Antes de copiar o adaptar código 
 un proyecto de referencia, confirmar su licencia en `docs/REFERENCES.md` y
 registrar el origen en el archivo destino:
 
-| Origen                                                     | Licencia   | Se puede                                                                     |
-| ---------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
-| DroneRoute, GeoFlight Planner, georaster-layer-for-leaflet | MIT        | Portar código, manteniendo el aviso de copyright                             |
-| Potree, PDAL, Fields2Cover, MapLibre GL                    | BSD        | Portar e integrar, manteniendo el aviso                                      |
-| QGroundControl, Mission Planner                            | GPL / LGPL | **Solo leer como referencia conceptual.** No copiar código                   |
-| WebODM / OpenDroneMap                                      | AGPL-3.0   | **Solo como servicio separado** (su propio contenedor). No enlazar su código |
+| Origen                                                     | Licencia   | Se puede                                                                                                     |
+| ---------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------ |
+| DroneRoute, GeoFlight Planner, georaster-layer-for-leaflet | MIT        | Portar código, manteniendo el aviso de copyright                                                             |
+| Potree, PDAL, Fields2Cover, MapLibre GL                    | BSD        | Portar e integrar, manteniendo el aviso                                                                      |
+| QGroundControl, Mission Planner                            | GPL / LGPL | **Solo leer como referencia conceptual.** No copiar código                                                   |
+| WebODM / OpenDroneMap                                      | AGPL-3.0   | **Fuera de alcance** (no hay hardware). Si volviera, solo como servicio separado — nunca enlazando su código |
 
 Una línea copiada de un proyecto GPL contamina todo el repositorio. Ante la duda,
 se reimplementa desde la documentación, no desde el código.

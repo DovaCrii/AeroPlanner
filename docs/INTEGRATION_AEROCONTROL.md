@@ -121,10 +121,9 @@ dos sistemas dependa del otro para operar.
 ## Los productos pesados no cruzan
 
 Ortofotos, nubes de puntos y DSM **nunca** entran a AeroControl: son gigabytes, y
-su documento canónico tiene un límite muy por debajo de eso. Viven en AeroPlanner
-o en WebODM.
+su documento canónico tiene un límite muy por debajo de eso. Viven donde estén
+almacenados; AeroPlanner guarda la referencia y los abre por streaming.
 
 Si en algún momento conviene que AeroControl los muestre, la vía es una **URL de
-teselas XYZ** servida por AeroPlanner y agregada como una capa más a su mapa
-Leaflet — un cambio mínimo, compatible con su límite de frontend, y sin mover un
-solo byte de dato pesado.
+teselas XYZ** agregada como una capa más a su mapa Leaflet — un cambio mínimo,
+compatible con su límite de frontend, y sin mover un solo byte de dato pesado.

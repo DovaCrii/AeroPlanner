@@ -6,6 +6,9 @@ import type {
 import { DEFAULT_WAYPOINT } from "@droneroute/shared";
 import {
   lineSpacingForOverlapM,
+  planCoverage,
+  planCorridor,
+  waypointsForCorridor,
   MAVIC_3E_WIDE,
 } from "@aeroplanner/mission-core";
 
@@ -76,7 +79,7 @@ function haversine(
 
 // ── Template Types ───────────────────────────────────────
 
-export type TemplateType = "orbit" | "grid" | "facade" | "pencil";
+export type TemplateType = "orbit" | "grid" | "corridor" | "facade" | "pencil";
 
 export interface OrbitParams {
   center: [number, number]; // [lat, lng]
@@ -104,6 +107,25 @@ export interface GridParams {
   addPhotos: boolean;
   rotationDeg: number; // rotation of the grid in degrees (0-360)
   reverse: boolean; // fly the grid in reverse order
+}
+
+export interface CorridorParams {
+  /**
+   * Axis of the corridor. Two points today — a straight run — but the engine
+   * takes any number, so a drawn or imported polyline slots in unchanged.
+   */
+  axisStart: [number, number]; // [lat, lng]
+  axisEnd: [number, number]; // [lat, lng]
+  altitude: number;
+  /** Number of parallel lines flown along the axis. */
+  lineCount: number;
+  /** Overlap between adjacent lines, as a fraction. Drives the spacing. */
+  sideOverlap: number;
+  /** Overlap along each line, as a fraction. Drives the shooting interval. */
+  frontOverlap: number;
+  /** `nadir` maps the ground; `side` photographs a face along the corridor. */
+  aim: "nadir" | "side";
+  addPhotos: boolean;
 }
 
 export interface FacadeParams {
@@ -156,6 +178,18 @@ export const DEFAULT_GRID_PARAMS: Omit<GridParams, "corner1" | "corner2"> = {
   addPhotos: true,
   rotationDeg: 0,
   reverse: false,
+};
+
+export const DEFAULT_CORRIDOR_PARAMS: Omit<
+  CorridorParams,
+  "axisStart" | "axisEnd"
+> = {
+  altitude: 80,
+  lineCount: 3,
+  sideOverlap: 0.7,
+  frontOverlap: 0.8,
+  aim: "nadir",
+  addPhotos: true,
 };
 
 export const DEFAULT_FACADE_PARAMS: Omit<FacadeParams, "point1" | "point2"> = {
@@ -351,6 +385,71 @@ export function generateGrid(params: GridParams): TemplateResult {
   }
 
   return { waypoints, pois: [] };
+}
+
+/**
+ * Corridor survey: parallel lines along an axis.
+ *
+ * All the geometry lives in `mission-core` — this only translates the result
+ * into the waypoint shape the app already speaks. Line spacing and shooting
+ * interval come from the overlap and the camera, never from a number typed by
+ * hand.
+ */
+export function generateCorridor(params: CorridorParams): TemplateResult {
+  const {
+    axisStart,
+    axisEnd,
+    altitude,
+    lineCount,
+    sideOverlap,
+    frontOverlap,
+    aim,
+    addPhotos,
+  } = params;
+
+  const coverage = planCoverage({
+    camera: MAVIC_3E_WIDE,
+    altitudeAglM: altitude,
+    frontOverlap,
+    sideOverlap,
+  });
+
+  const plan = planCorridor({
+    axis: [
+      { lat: axisStart[0], lng: axisStart[1] },
+      { lat: axisEnd[0], lng: axisEnd[1] },
+    ],
+    lineCount,
+    lineSpacingM: coverage.lineSpacingM,
+  });
+
+  const corridorWaypoints = waypointsForCorridor(plan.lines, {
+    altitudeAglM: altitude,
+    photoSpacingM: coverage.photoSpacingM,
+    aim,
+  });
+
+  const takePhotoAction: WaypointAction = {
+    actionId: 0,
+    actionType: "takePhoto",
+    params: { payloadPositionIndex: 0 },
+  };
+
+  return {
+    waypoints: corridorWaypoints.map((wp) => ({
+      ...DEFAULT_WAYPOINT,
+      latitude: wp.position.lat,
+      longitude: wp.position.lng,
+      height: wp.altitudeAglM,
+      useGlobalHeight: false,
+      headingMode: "fixed" as const,
+      headingAngle: Math.round(wp.headingDeg),
+      useGlobalHeadingParam: false,
+      gimbalPitchAngle: Math.round(wp.gimbalPitchDeg),
+      actions: addPhotos ? [takePhotoAction] : [],
+    })),
+    pois: [],
+  };
 }
 
 export function generateFacade(params: FacadeParams): TemplateResult {

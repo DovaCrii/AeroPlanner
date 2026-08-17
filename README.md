@@ -46,7 +46,7 @@ de la operación.
 | **Terreno**             | DEM/DSM, vuelo a altura constante sobre el suelo, clearance mínimo y perfil                                     | Por construir |
 | **Simulación**          | Recorrido animado con línea de tiempo, telemetría estimada y footprints de foto                                 | Por construir |
 | **Validación**          | Autonomía y baterías, clearance, y contraste contra la envolvente del permiso DGAC                              | Por construir |
-| **Visor de resultados** | Ortofotos (COG) y nubes de puntos (COPC/Potree) del vuelo procesado                                             | Por construir |
+| **Visor de resultados** | Carga y muestra ortofotos (COG) y nubes de puntos (COPC) ya procesadas — **no las genera**                      | Por construir |
 
 ## Cómo se relaciona con AeroControl
 
@@ -130,6 +130,11 @@ No se reabren sin que el usuario lo pida (el fundamento está en `docs/`):
 - **Se parte del código de DroneRoute**, no de un desarrollo desde cero — da un
   planificador usable de inmediato y ya resuelve el export DJI WPML/KMZ, que es
   el requisito crítico de la flota.
+- **Planifica y visualiza; no procesa.** Calcular una misión es aritmética que
+  corre en el navegador. Reconstruir una ortofoto desde cientos de fotos pide
+  horas de CPU y decenas de GB de RAM, y eso queda fuera. Abrir productos ya
+  generados sí entra: un COG se lee por rangos HTTP y un COPC trae octree, así
+  que el navegador descarga solo lo que hay en pantalla.
 - **MapLibre en vez de Mapbox** (hecho) — `mapbox-gl` v3 es de licencia
   propietaria, exige token y factura por cargas de mapa. Las fuentes viven en
   `packages/frontend/src/lib/mapStyles.ts`; ese es el único archivo a tocar si

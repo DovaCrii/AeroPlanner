@@ -33,23 +33,24 @@ problema.
 | Footprints de foto y análisis de cobertura         | 4    | Hace visible el traslape real y los huecos                 |
 | Validación contra el permiso DGAC                  | 5    | Altura máxima, radio, vigencia                             |
 | Entrega del plan a AeroControl                     | 5    | KMZ primero, API después                                   |
-| Visor de ortofoto y nube de puntos                 | 6    | COG + COPC/Potree                                          |
+| Cargar y ver ortofoto y nube de puntos             | 6    | COG + COPC, ya procesados por otro                         |
 
 ## Qué no entra, y por qué
 
 Esto no es una lista de "después vemos": son decisiones tomadas.
 
-| Qué                                            | Por qué                                                                                                                                  |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **PX4 SITL + Gazebo** (simulación física)      | No simula un DJI real — validaría el comportamiento de un autopiloto PX4, que no es el que vuela. Para planificar bien no aporta         |
-| **CesiumJS**                                   | El runtime es Apache 2.0, pero el terreno de Cesium ion tiene costo comercial. El 3D del fork alcanza para el MVP                        |
-| **Fields2Cover / OR-Tools**                    | Resuelve optimización de cobertura en polígonos irregulares con obstáculos. Recién tiene sentido cuando "generar una grilla" quede corto |
-| **QGroundControl `.plan` y MAVLink**           | La flota es DJI; el formato que importa es WPML                                                                                          |
-| **Multi-drone**                                | Un piloto, una aeronave, una misión                                                                                                      |
-| **Meteorología**                               | AeroControl ya la resuelve con `WeatherReview` sobre Open-Meteo. Duplicarla sería peor que no tenerla                                    |
-| **Mapas de espacio aéreo DGAC**                | Requiere una fuente oficial que hoy no existe como servicio consultable                                                                  |
-| **Edición y clasificación de nubes de puntos** | Aquí solo se visualiza. El procesamiento es de WebODM y CloudCompare                                                                     |
-| **Telemetría en vivo y control de vuelo**      | Es una estación de control terrestre, otro producto                                                                                      |
+| Qué                                            | Por qué                                                                                                                                                             |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **PX4 SITL + Gazebo** (simulación física)      | No simula un DJI real — validaría el comportamiento de un autopiloto PX4, que no es el que vuela. Para planificar bien no aporta                                    |
+| **CesiumJS**                                   | El runtime es Apache 2.0, pero el terreno de Cesium ion tiene costo comercial. El 3D del fork alcanza para el MVP                                                   |
+| **Fields2Cover / OR-Tools**                    | Resuelve optimización de cobertura en polígonos irregulares con obstáculos. Recién tiene sentido cuando "generar una grilla" quede corto                            |
+| **QGroundControl `.plan` y MAVLink**           | La flota es DJI; el formato que importa es WPML                                                                                                                     |
+| **Multi-drone**                                | Un piloto, una aeronave, una misión                                                                                                                                 |
+| **Meteorología**                               | AeroControl ya la resuelve con `WeatherReview` sobre Open-Meteo. Duplicarla sería peor que no tenerla                                                               |
+| **Mapas de espacio aéreo DGAC**                | Requiere una fuente oficial que hoy no existe como servicio consultable                                                                                             |
+| **Procesamiento fotogramétrico**               | Reconstruir ortofoto, nube y DSM desde cientos de fotos pide horas de CPU y 16–64 GB de RAM. No hay hardware. La app **abre** productos ya generados, no los genera |
+| **Edición y clasificación de nubes de puntos** | Aquí solo se visualiza. Editar es trabajo de CloudCompare                                                                                                           |
+| **Telemetría en vivo y control de vuelo**      | Es una estación de control terrestre, otro producto                                                                                                                 |
 
 ## Por qué se parte de un fork y no de cero
 
@@ -77,7 +78,7 @@ autorizada, las coordenadas, el radio y la vigencia de cada permiso DGAC.
 Contrastar la misión contra esa envolvente es barato de implementar y convierte
 al planificador en un control operacional, no solo en un dibujante de rutas.
 
-**El ciclo cerrado.** La ortofoto y el DSM del vuelo procesado vuelven al
+**El ciclo cerrado.** La ortofoto y el DSM del vuelo —procesados donde sea— vuelven al
 planificador: mejor base cartográfica y mejor terreno que cualquier fuente
 pública de 30 metros. Se planifica el vuelo siguiente sobre el resultado del
 anterior.

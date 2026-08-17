@@ -71,8 +71,9 @@ mismo polígono en QGIS deben dar las mismas cifras.
 
 <https://github.com/potree/potree>
 
-Visor WebGL de nubes de puntos masivas, el estándar de facto y el que embebe
-WebODM. Se integra en la Fase 6.
+Visor WebGL de nubes de puntos masivas, el estándar de facto. Renderiza por
+streaming desde el octree del archivo, así que el coste es del cliente y a
+demanda — no hace falta servidor de proceso. Se integra en la Fase 6.
 
 ### PDAL / Untwine — BSD
 
@@ -144,18 +145,26 @@ _Informative path planning_: decidir dónde volar para obtener la información m
 lectura desde enero de 2024). Referencia de investigación para inspección
 autónoma; no es un componente de producción.
 
-## Servicio externo
+## Procesamiento: fuera de alcance
 
 ### WebODM / OpenDroneMap — AGPL-3.0
 
 <https://webodm.org/>
 
-Pipeline fotogramétrico completo self-hosted: fotos → ortofoto, nube de puntos,
-DSM y modelo 3D texturizado. Trae su propio visor (Potree + Leaflet).
+Pipeline fotogramétrico self-hosted: fotos → ortofoto, nube de puntos, DSM y
+modelo 3D texturizado.
 
-**Se despliega como contenedor aparte y se le habla por su API HTTP.** Esa
-separación es lo que impide que la AGPL alcance al código MIT de AeroPlanner.
-Nunca enlazar su código.
+**Descartado el 2026-08-17 por falta de hardware.** Con 8 GB de RAM no procesa
+más de unas 100 imágenes; con 16 GB, de 100 a 300. Un vuelo del Mavic 3E produce
+500 o más. Montarlo sería instalar algo que no se puede correr.
+
+Queda anotado por si algún día existe el equipo: se desplegaría **como contenedor
+aparte, hablándole por su API HTTP**, porque esa separación es lo que impide que
+la AGPL alcance al código MIT de AeroPlanner. Nunca enlazar su código.
+
+La alternativa sin hardware propio es su servicio en la nube (WebODM Lightning) o
+recibir los productos ya procesados de un tercero. **AeroPlanner los visualiza; no
+los genera.**
 
 ## Datos
 

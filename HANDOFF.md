@@ -30,14 +30,28 @@ de cámara). Si falla, hay que entender por qué **antes** de seguir.
 
 ### Y después, en este orden
 
-1. **Fase 2 — corredores** (`F2.1`–`F2.4`). El tipo de misión que más se usa en
-   faena: líneas eléctricas, caminos, corredores mineros. Se construye en
-   `packages/mission-core/corridor/`, con la misma disciplina que la Fase 1:
-   dominio puro, tests en Node, oráculo externo (GeoFlight sobre QGIS).
-2. **`F0.8` — WebODM** en su propio contenedor. Cero código: da procesamiento y
-   visor de ortofoto y nube de puntos desde el día uno.
-3. **Fase 3 — terrain following.** Ojo: `queryTerrainElevation()` de MapLibre es
-   el camino directo para muestrear el DEM que la vista 3D ya carga.
+1. **Fase 3 — terrain following.** `queryTerrainElevation()` de MapLibre es el
+   camino directo para muestrear el DEM que la vista 3D ya carga.
+2. **Fase 4 — simulación**, y **Fase 5 — integración con AeroControl**.
+3. **Deuda menor de la Fase 2:** el eje del corredor es hoy un tramo recto. El
+   motor acepta polilíneas de N vértices, así que dibujar un eje quebrado o
+   importarlo desde KML es cambiar la entrada, no el cálculo.
+
+## Alcance: planificar y visualizar, nunca procesar
+
+Decidido el 2026-08-17. Son dos cosas que la palabra "fotogrametría" confunde:
+
+- **Calcular** una misión (GSD, traslapes, separación) es aritmética: corre en el
+  navegador en microsegundos. Es lo que hace `mission-core`.
+- **Procesar** un vuelo (ortofoto, nube de puntos, DSM desde cientos de fotos)
+  exige horas de CPU y 16–64 GB de RAM. **No hay hardware para eso**, así que
+  `F0.8` (WebODM) queda descartado.
+- **Visualizar** productos ya generados **sí entra** (Fase 6): un COG se lee por
+  rangos HTTP y un COPC trae octree, de modo que el navegador descarga solo lo
+  que hay en pantalla. Es lo mismo que hace cualquier herramienta comercial, y no
+  pide una estación de trabajo.
+
+Regla corta: **la aplicación abre lo que otro procesó; no lo genera.**
 
 ### Antes de tocar código
 

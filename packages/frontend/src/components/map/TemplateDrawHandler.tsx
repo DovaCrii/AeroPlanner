@@ -6,15 +6,18 @@ import { TemplatePreview } from "./TemplatePreview";
 import type {
   OrbitParams,
   GridParams,
+  CorridorParams,
   FacadeParams,
   TemplateResult,
 } from "@/lib/templates";
 import {
   generateOrbit,
   generateGrid,
+  generateCorridor,
   generateFacade,
   DEFAULT_ORBIT_PARAMS,
   DEFAULT_GRID_PARAMS,
+  DEFAULT_CORRIDOR_PARAMS,
   DEFAULT_FACADE_PARAMS,
 } from "@/lib/templates";
 
@@ -72,6 +75,9 @@ export function TemplateDrawHandler() {
 
   const [orbitParams, setOrbitParams] = useState<OrbitParams | null>(null);
   const [gridParams, setGridParams] = useState<GridParams | null>(null);
+  const [corridorParams, setCorridorParams] = useState<CorridorParams | null>(
+    null,
+  );
   const [facadeParams, setFacadeParams] = useState<FacadeParams | null>(null);
 
   const resetState = useCallback(() => {
@@ -80,6 +86,7 @@ export function TemplateDrawHandler() {
     setConfirmed(false);
     setOrbitParams(null);
     setGridParams(null);
+    setCorridorParams(null);
     setFacadeParams(null);
   }, []);
 
@@ -146,6 +153,12 @@ export function TemplateDrawHandler() {
           corner1: finalDrag.start,
           corner2: finalDrag.end,
         });
+      } else if (tm === "corridor") {
+        setCorridorParams({
+          ...DEFAULT_CORRIDOR_PARAMS,
+          axisStart: finalDrag.start,
+          axisEnd: finalDrag.end,
+        });
       } else if (tm === "facade") {
         setFacadeParams({
           ...DEFAULT_FACADE_PARAMS,
@@ -173,9 +186,10 @@ export function TemplateDrawHandler() {
   const preview: TemplateResult | null = useMemo(() => {
     if (orbitParams) return generateOrbit(orbitParams);
     if (gridParams) return generateGrid(gridParams);
+    if (corridorParams) return generateCorridor(corridorParams);
     if (facadeParams) return generateFacade(facadeParams);
     return null;
-  }, [orbitParams, gridParams, facadeParams]);
+  }, [orbitParams, gridParams, corridorParams, facadeParams]);
 
   const dragPreview = useMemo(() => {
     if (!dragging || !dragState || !templateMode) return null;
@@ -199,6 +213,13 @@ export function TemplateDrawHandler() {
         ...DEFAULT_GRID_PARAMS,
         corner1: dragState.start,
         corner2: dragState.end,
+      });
+    }
+    if (templateMode === "corridor") {
+      return generateCorridor({
+        ...DEFAULT_CORRIDOR_PARAMS,
+        axisStart: dragState.start,
+        axisEnd: dragState.end,
       });
     }
     if (templateMode === "facade") {
@@ -241,7 +262,9 @@ export function TemplateDrawHandler() {
         },
       };
     }
-    if (templateMode === "facade") {
+    if (templateMode === "facade" || templateMode === "corridor") {
+      // Both are defined by a single line: the wall for one, the axis for the
+      // other.
       return {
         type: "Feature" as const,
         properties: {},
@@ -352,9 +375,11 @@ export function TemplateDrawHandler() {
           type={templateMode}
           orbitParams={orbitParams}
           gridParams={gridParams}
+          corridorParams={corridorParams}
           facadeParams={facadeParams}
           onOrbitChange={setOrbitParams}
           onGridChange={setGridParams}
+          onCorridorChange={setCorridorParams}
           onFacadeChange={setFacadeParams}
           onApply={handleApply}
           onCancel={handleCancel}

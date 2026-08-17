@@ -9,6 +9,7 @@ import {
   PenLine,
   ChevronDown,
   Triangle,
+  Spline,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,14 @@ const TEMPLATE_OPTIONS: {
     icon: Grid3X3,
     description: "Lawn-mower scan area",
     key: "G",
+  },
+  {
+    type: "corridor",
+    label: "Corridor",
+    shortLabel: "Corridor",
+    icon: Spline,
+    description: "Lines along an axis",
+    key: "C",
   },
   {
     type: "facade",
