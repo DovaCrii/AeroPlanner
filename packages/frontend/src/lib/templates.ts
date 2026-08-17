@@ -4,6 +4,10 @@ import type {
   WaypointAction,
 } from "@droneroute/shared";
 import { DEFAULT_WAYPOINT } from "@droneroute/shared";
+import {
+  lineSpacingForOverlapM,
+  MAVIC_3E_WIDE,
+} from "@aeroplanner/mission-core";
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -87,7 +91,16 @@ export interface GridParams {
   corner1: [number, number]; // [lat, lng]
   corner2: [number, number]; // [lat, lng]
   altitude: number;
+  /**
+   * Distance between flight lines, in meters.
+   *
+   * Derived from `sideOverlap` and the altitude via the photogrammetry engine —
+   * it is no longer a free parameter. Kept as the field the grid generator
+   * consumes so the geometry code stays unaware of camera models.
+   */
   spacingM: number;
+  /** Overlap between adjacent lines, as a fraction: 0.7 means 70 %. */
+  sideOverlap: number;
   addPhotos: boolean;
   rotationDeg: number; // rotation of the grid in degrees (0-360)
   reverse: boolean; // fly the grid in reverse order
@@ -136,7 +149,10 @@ export const DEFAULT_ORBIT_PARAMS: Omit<OrbitParams, "center" | "radiusM"> = {
 
 export const DEFAULT_GRID_PARAMS: Omit<GridParams, "corner1" | "corner2"> = {
   altitude: 80,
-  spacingM: 30,
+  // 70 % side overlap at 80 m with the Mavic 3E wide camera. Kept in sync by
+  // the panel, which recomputes it whenever altitude or overlap changes.
+  spacingM: lineSpacingForOverlapM(MAVIC_3E_WIDE, 80, 0.7),
+  sideOverlap: 0.7,
   addPhotos: true,
   rotationDeg: 0,
   reverse: false,

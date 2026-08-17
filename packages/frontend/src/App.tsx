@@ -21,7 +21,9 @@ import {
   CircleHelp,
   Triangle,
   Shield,
+  BatteryMedium,
 } from "lucide-react";
+import { planBatteries } from "@aeroplanner/mission-core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapView } from "@/components/map/MapView";
@@ -159,6 +161,27 @@ export default function App() {
     [waypoints, config.autoFlightSpeed],
   );
 
+  /**
+   * How many batteries the mission needs, and how to split it.
+   *
+   * Replaces a plain "exceeds max battery" flag: knowing the mission needs
+   * three batteries — and where the cuts fall — is actionable, whereas knowing
+   * it is simply too long is not.
+   */
+  const batteryPlan = useMemo(() => {
+    if (!flightStats) return null;
+    try {
+      return planBatteries(flightStats.time, {
+        operationalEnduranceMin: config.maxBatteryMinutes,
+        reserveMin: config.batteryReserveMinutes ?? 0,
+      });
+    } catch {
+      // A reserve that swallows the whole endurance is a configuration error,
+      // not a mission error — the settings panel surfaces it.
+      return null;
+    }
+  }, [flightStats, config.maxBatteryMinutes, config.batteryReserveMinutes]);
+
   // Aggregated warnings for overlay
   const warnings = useMemo(() => {
     const result: Warning[] = [];
@@ -169,11 +192,16 @@ export default function App() {
         message: `${obstacleWarnings.length} obstacle warning${obstacleWarnings.length > 1 ? "s" : ""} — waypoints conflict with restricted zones`,
       });
     }
-    if (flightStats && flightStats.time > config.maxBatteryMinutes * 60) {
+    if (batteryPlan && !batteryPlan.fitsInOneFlight) {
+      const legs = batteryPlan.legs
+        .map((l) => formatDuration(l.durationS))
+        .join(" + ");
       result.push({
         id: "battery",
         type: "battery",
-        message: `Flight time (${formatDuration(flightStats.time)}) exceeds max battery (${config.maxBatteryMinutes}min)`,
+        message:
+          `Flight time (${formatDuration(flightStats!.time)}) needs ` +
+          `${batteryPlan.batteriesNeeded} batteries — split evenly: ${legs}`,
       });
     }
     // Airspace zone warnings
@@ -202,7 +230,7 @@ export default function App() {
     obstacleWarnings,
     obstacles.length,
     flightStats,
-    config.maxBatteryMinutes,
+    batteryPlan,
     airspaceWarnings,
   ]);
 
@@ -694,7 +722,9 @@ export default function App() {
                     const diff = wp.height - waypoints[i - 1].height;
                     return sum + (diff > 0 ? diff : 0);
                   }, 0);
-                  const exceedsBattery = time > config.maxBatteryMinutes * 60;
+                  const exceedsBattery = batteryPlan
+                    ? !batteryPlan.fitsInOneFlight
+                    : false;
                   return (
                     <>
                       {elevGain > 0 && (
@@ -721,7 +751,7 @@ export default function App() {
                         className="flex items-center gap-1 text-[11px]"
                         title={
                           exceedsBattery
-                            ? `Exceeds max battery (${config.maxBatteryMinutes}min)`
+                            ? `Exceeds one battery (${batteryPlan?.usableMinPerBattery} min usable)`
                             : "Estimated flight time"
                         }
                       >
@@ -734,6 +764,26 @@ export default function App() {
                           {formatDuration(time)}
                         </span>
                       </span>
+                      {batteryPlan && (
+                        <span
+                          className="flex items-center gap-1 text-[11px]"
+                          title={
+                            `${batteryPlan.usableMinPerBattery} min usable per battery` +
+                            (batteryPlan.fitsInOneFlight
+                              ? ` — ${Math.round(batteryPlan.lastBatteryUsedFraction * 100)}% used`
+                              : ` — split into ${batteryPlan.batteriesNeeded} flights`)
+                          }
+                        >
+                          <BatteryMedium
+                            className={`h-3 w-3 ${exceedsBattery ? "text-orange-400" : "text-sky-400"}`}
+                          />
+                          <span
+                            className={`font-medium ${exceedsBattery ? "text-orange-300" : "text-sky-300"}`}
+                          >
+                            {batteryPlan.batteriesNeeded}
+                          </span>
+                        </span>
+                      )}
                     </>
                   );
                 })()

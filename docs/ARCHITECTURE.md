@@ -71,8 +71,8 @@ Mission
 └── validation        resultados de las verificaciones
 ```
 
-Preparado para incorporar después, sin rehacer el modelo: fachada, *structure
-scan*, inspección y survey oblicuo.
+Preparado para incorporar después, sin rehacer el modelo: fachada, _structure
+scan_, inspección y survey oblicuo.
 
 ## Reglas de tipos que evitan accidentes
 

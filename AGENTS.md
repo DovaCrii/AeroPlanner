@@ -11,7 +11,7 @@ base de datos compartida**.
 La corrección de los cálculos prevalece sobre todo lo demás: una misión mal
 calculada se traduce en un vuelo perdido, o peor, en una aeronave contra un
 cerro. Antes de dar por buena una fórmula, se contrasta contra un oráculo
-externo (ver *Verificación*).
+externo (ver _Verificación_).
 
 > **Si existe `HANDOFF.md` en la raíz, léelo antes que nada.** Dice el punto
 > exacto de retome. `MASTER_PLAN.md` es la fuente de verdad de qué sigue.
@@ -26,8 +26,8 @@ Este repositorio **deriva de [DroneRoute](https://github.com/fcsonline/dronerout
   regularidad**: el proyecto original publicó tres versiones en un mes.
 - El aviso de copyright original **no se elimina nunca** del `LICENSE` — lo exige
   la licencia MIT y es la condición que permite este derivado.
-- El código heredado trae convenciones propias que se respetan (ver *Convenciones
-  del código heredado*). Donde chocan con las nuestras, manda esta guía y el
+- El código heredado trae convenciones propias que se respetan (ver _Convenciones
+  del código heredado_). Donde chocan con las nuestras, manda esta guía y el
   choque queda documentado abajo.
 
 ## Decisiones ya tomadas (no reabrir sin que el usuario lo pida)
@@ -107,7 +107,7 @@ npm run lint:fix     # corrige lo que oxlint puede arreglar solo
   React, del motor de mapa ni del DOM. Si un cálculo necesita el navegador para
   probarse, está en el lugar equivocado.
 - **Ningún formato de fabricante entra al dominio.** DJI WPML, KML y GeoJSON son
-  *adapters*. El modelo de misión no sabe que DJI existe.
+  _adapters_. El modelo de misión no sabe que DJI existe.
 - **Unidades explícitas en el nombre.** `altitudeM`, `gsdCm`, `distanceM`,
   `durationS`. Un número sin unidad en la firma es un bug esperando su turno.
   Internamente todo va en SI; la conversión a pies o nudos ocurre solo en la capa
@@ -139,7 +139,7 @@ nunca en una ruta del host. Antes de correr cualquier script que escriba en una
 base de datos, verificar el destino: si apunta a un host remoto, detenerse y
 confirmar con el usuario.
 
-**Texto de interfaz en *sentence case*.** Solo la primera palabra y los nombres
+**Texto de interfaz en _sentence case_.** Solo la primera palabra y los nombres
 propios en mayúscula. Las siglas se mantienen (WP, POI, KMZ, RTH, AGL, MSL).
 Correcto: `"Grid survey"`, `"Heading mode"`. Incorrecto: `"Grid Survey"`.
 
@@ -152,12 +152,12 @@ Este proyecto es MIT y debe seguir siéndolo. Antes de copiar o adaptar código 
 un proyecto de referencia, confirmar su licencia en `docs/REFERENCES.md` y
 registrar el origen en el archivo destino:
 
-| Origen | Licencia | Se puede |
-| --- | --- | --- |
-| DroneRoute, GeoFlight Planner, georaster-layer-for-leaflet | MIT | Portar código, manteniendo el aviso de copyright |
-| Potree, PDAL, Fields2Cover, MapLibre GL | BSD | Portar e integrar, manteniendo el aviso |
-| QGroundControl, Mission Planner | GPL / LGPL | **Solo leer como referencia conceptual.** No copiar código |
-| WebODM / OpenDroneMap | AGPL-3.0 | **Solo como servicio separado** (su propio contenedor). No enlazar su código |
+| Origen                                                     | Licencia   | Se puede                                                                     |
+| ---------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
+| DroneRoute, GeoFlight Planner, georaster-layer-for-leaflet | MIT        | Portar código, manteniendo el aviso de copyright                             |
+| Potree, PDAL, Fields2Cover, MapLibre GL                    | BSD        | Portar e integrar, manteniendo el aviso                                      |
+| QGroundControl, Mission Planner                            | GPL / LGPL | **Solo leer como referencia conceptual.** No copiar código                   |
+| WebODM / OpenDroneMap                                      | AGPL-3.0   | **Solo como servicio separado** (su propio contenedor). No enlazar su código |
 
 Una línea copiada de un proyecto GPL contamina todo el repositorio. Ante la duda,
 se reimplementa desde la documentación, no desde el código.
@@ -167,13 +167,13 @@ se reimplementa desde la documentación, no desde el código.
 Los tests que solo comparan el código consigo mismo no prueban nada en un motor
 de cálculo geométrico. Antes de marcar ✅:
 
-| Qué se calcula | Contra qué se verifica |
-| --- | --- |
+| Qué se calcula                                  | Contra qué se verifica                                                                           |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | GSD, footprint, traslapes, separación de líneas | Salida de **GeoFlight Planner** sobre el mismo polígono en QGIS, y la ficha técnica de la cámara |
-| Export DJI WPML/KMZ | El **control real** lo acepta y muestra la misión completa |
-| Terrain following y perfil | Muestreo manual del mismo DEM en **QGIS** |
-| Simulación | Duración simulada ≈ duración estimada; nº de footprints = nº de fotos calculado |
-| Integración | Round-trip KMZ AeroPlanner → AeroControl → export → re-import, sin pérdida |
+| Export DJI WPML/KMZ                             | El **control real** lo acepta y muestra la misión completa                                       |
+| Terrain following y perfil                      | Muestreo manual del mismo DEM en **QGIS**                                                        |
+| Simulación                                      | Duración simulada ≈ duración estimada; nº de footprints = nº de fotos calculado                  |
+| Integración                                     | Round-trip KMZ AeroPlanner → AeroControl → export → re-import, sin pérdida                       |
 
 Antes de entregar: build, lint y formato en verde, y **verificación en el
 navegador** de lo que se ve. Un cálculo correcto con la capa mal dibujada sigue

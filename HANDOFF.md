@@ -3,87 +3,114 @@
 > **Resumen de estado, no bitácora.** La historia detallada vive en `git log`.
 > La **fuente de verdad del trabajo pendiente** es [MASTER_PLAN.md](MASTER_PLAN.md).
 
+## Cómo seguir (leer esto primero)
+
+**Hay dos PRs abiertos y apilados.** Nada está en `main` todavía:
+
+| PR                                                   | Rama                         | Qué trae                                  |
+| ---------------------------------------------------- | ---------------------------- | ----------------------------------------- |
+| [#1](https://github.com/DovaCrii/AeroPlanner/pull/1) | `codex/fase-0-maplibre`      | Fase 0: auditorías + migración a MapLibre |
+| [#2](https://github.com/DovaCrii/AeroPlanner/pull/2) | `codex/fase-1-fotogrametria` | Fase 1: motor fotogramétrico              |
+
+El #2 apunta al #1, no a `main`. **Fusionar el #1 primero**; GitHub reapunta el
+#2 a `main` solo. No fusionar sin que el usuario lo pida explícitamente.
+
+### El siguiente paso que más vale
+
+**`F0.9`: cargar en el control real un KMZ exportado por la aplicación.**
+
+Es el único riesgo abierto que puede invalidar la premisa completa de haber
+partido de este código, y ninguna fase posterior lo despeja. Hasta hacerlo, todo
+lo que se construya encima es apuesta. **Necesita a una persona con el RC
+delante** — no se puede automatizar.
+
+Cómo: levantar la app, dibujar una grilla, `Export KMZ`, cargar el archivo al
+control y confirmar que la misión aparece completa (waypoints, alturas, acciones
+de cámara). Si falla, hay que entender por qué **antes** de seguir.
+
+### Y después, en este orden
+
+1. **Fase 2 — corredores** (`F2.1`–`F2.4`). El tipo de misión que más se usa en
+   faena: líneas eléctricas, caminos, corredores mineros. Se construye en
+   `packages/mission-core/corridor/`, con la misma disciplina que la Fase 1:
+   dominio puro, tests en Node, oráculo externo (GeoFlight sobre QGIS).
+2. **`F0.8` — WebODM** en su propio contenedor. Cero código: da procesamiento y
+   visor de ortofoto y nube de puntos desde el día uno.
+3. **Fase 3 — terrain following.** Ojo: `queryTerrainElevation()` de MapLibre es
+   el camino directo para muestrear el DEM que la vista 3D ya carga.
+
+### Antes de tocar código
+
+Leer [AGENTS.md](AGENTS.md). En corto: rama `codex/<fase>`, nunca commitear a
+`main`, `npm run build` **antes** de empujar, y `packages/mission-core` no
+importa React ni el mapa ni el DOM. Un hook de `lefthook` rechaza el commit si
+`prettier` u `oxlint` fallan.
+
+---
+
 ## Estado al 2026-08-17
 
-**El código base está incorporado y compila.** El repositorio dejó de ser solo
-documentación: contiene el código de DroneRoute con su historial completo, y la
-aplicación se levanta y planifica misiones DJI.
-
-- **Rama:** `main`. **Licencia:** MIT, conservando el copyright original.
+- **Build:** `npm install && npm run build` verde en los 5 paquetes (Node 26).
+- **Tests:** 32 en `mission-core` + 33 en el backend.
 - **Remotos:** `origin` (DovaCrii/AeroPlanner) y `upstream` (fcsonline/droneroute).
-- **Build:** `npm install && npm run build` verde en los 4 paquetes (Node 26, npm 11).
+- **Licencia:** MIT, conservando el copyright original de DroneRoute.
 - **Repositorio hermano:** [AeroControl](https://github.com/DovaCrii/AeroControl) —
   en **solo lectura** mientras dure el MVP.
 
-## Decisiones tomadas el 2026-08-17
+La aplicación levanta, planifica misiones DJI y exporta KMZ **sin ningún token**.
 
-1. **Este repositorio absorbe el código**, en vez de mantener un fork aparte. El
-   upstream queda como remoto para traer mejoras — publicó tres versiones en un
-   mes, así que ese canal vale.
-2. **Se migra de Mapbox a MapLibre** (`F0.10`). Hoy la aplicación **no arranca
-   sin un token de Mapbox**, lo que contradice el local-first del proyecto.
+## Decisiones tomadas
+
+1. **Este repositorio absorbe el código** de DroneRoute, en vez de mantener un
+   fork aparte. El upstream queda como remoto para traer mejoras — publicó tres
+   versiones en un mes, así que ese canal vale.
+2. **MapLibre en vez de Mapbox**, porque la app no arrancaba sin token y eso
+   contradice el local-first del proyecto.
 
 ## Lo que las auditorías cambiaron
 
-Tres supuestos del plan original resultaron falsos. El detalle está en
-`MASTER_PLAN.md` → _Hallazgos de auditoría_; el resumen:
+Cuatro supuestos del plan original resultaron falsos. Detalle en
+`MASTER_PLAN.md` → _Hallazgos de auditoría_:
 
-- **No hay fotogrametría.** La grilla usa un `spacingM` manual, sin modelo de
-  cámara ni traslapes. La Fase 1 pasa de "conectar" a **construir el motor
-  entero**.
-- **No hay terreno.** Ni `raster-dem`, ni muestreo de elevación. El gráfico de
-  elevación grafica la altitud de los waypoints, no el suelo. La Fase 3 es
-  **construcción completa**.
-- **El token de Mapbox es peor de lo previsto:** no afecta solo al 3D, el mapa
-  entero no renderiza sin él.
+- **No había fotogrametría.** La grilla usaba un `spacingM` manual. La Fase 1
+  pasó de "conectar" a **construir el motor entero** — ya está hecho.
+- **No hay muestreo de elevación.** Sí hay terreno visual, pero nadie consulta la
+  altura del suelo. La Fase 3 sigue siendo construcción completa.
+- **El multiusuario ya funciona**; el riesgo real es el `JWT_SECRET` (ver abajo).
+- **El modelo de misión es un modelo DJI**, no de dominio. `mission-core` trae el
+  modelo propio; el heredado queda como capa de exportación.
 
-El lado bueno: al no haber terreno que portar, la migración a MapLibre es más
-simple de lo que se temía. Alcance medido: 15 archivos, ~81 ocurrencias.
+> **Ojo:** `services/airspace/provider-dgac.ts` es la DGAC **de Francia**. No hay
+> cobertura de espacio aéreo chileno.
 
-## Limpieza aplicada al incorporar el código
+## Riesgo de seguridad a cerrar antes de desplegar
 
-El merge traía infraestructura apuntando a cuentas ajenas, eliminada antes de
-publicar: el `CNAME` de `droneroute.io`, `fly.toml` y su workflow de despliegue
-—que se disparaba **en cada push**—, la publicación de imagen a
-`fcsonline/droneroute` en Docker Hub, y el auto-merge de dependabot. Se conservó
-`ci.yml` (build y lint en PR).
+**Sin `JWT_SECRET` definido, el modo self-hosted arranca igual**, con un secreto
+por defecto que está publicado en el código fuente. Como el registro de usuarios
+está abierto, cualquiera que alcance la instancia puede crear cuenta y, con ese
+secreto conocido, firmarse un token `isAdmin: true`. Definirlo (≥32 caracteres,
+aleatorio) **no es opcional** en el despliegue interno.
 
-## Migración a MapLibre: hecha (`F0.10`)
+## Trampas ya pagadas (no reaprenderlas)
 
-La aplicación ya no necesita ningún token. Fuentes elegidas: **OpenFreeMap**
-(callejero vectorial), **Esri World Imagery** (satelital — el mismo proveedor que
-ya usa AeroControl, así que no entra un tercero nuevo) y **AWS Terrain Tiles**
-(relieve). Todas viven en `packages/frontend/src/lib/mapStyles.ts`.
-
-Tres cosas que costaron y conviene no reaprender:
-
-1. `maplibre-gl` **v6 rompe con `react-map-gl` 8.1.1** — la app queda en blanco.
-   Está fijado a v5; no subir sin verificar.
+1. `maplibre-gl` **v6 rompe con `react-map-gl` 8.1.1** — la app queda en blanco
+   con `Cannot read properties of undefined (reading 'center')`. Fijado a v5.
 2. npm deja `maplibre-gl` dentro del paquete y `@vis.gl/react-maplibre` en la
    raíz, así que la librería no resuelve su peer. Hay un alias en
-   `vite.config.ts` que lo arregla; no borrarlo.
+   `vite.config.ts`; **no borrarlo**.
 3. MapLibre no tiene `map.project(lngLat, altitude)`. La línea vertical del
-   waypoint ahora se aproxima con la escala del mapa y el pitch.
-
-## Qué sigue, exactamente
-
-**`F0.9` es la prioridad:** verificar que el KMZ que genera la aplicación **lo
-acepta el control real de la flota**. Es el único riesgo que todavía puede
-invalidar la premisa de haber partido de este código, y hasta despejarlo toda
-inversión en las fases siguientes es apuesta. Necesita a alguien con el RC
-delante.
-
-Después, sin dependencias entre sí:
-
-- **`F0.8`** — desplegar WebODM en su contenedor: procesar y ver ortofoto y nube
-  de puntos sin escribir una línea.
-- **Fase 1** — el motor fotogramétrico, que las auditorías confirmaron que hay
-  que construir entero.
+   waypoint se aproxima con la escala del mapa y el pitch.
+4. El panel de vista previa del entorno de desarrollo **no compone WebGL**: el
+   mapa parece roto ahí aunque funcione. Para verlo de verdad hay que renderizar
+   fuera de ese panel.
 
 ## Decisiones pendientes que solo el usuario puede tomar
 
+- **Autonomía operacional y reserva de batería.** Ya están expuestas en la
+  configuración de misión, con la reserva en 0 por defecto para no cambiar en
+  silencio lo que reportan las misiones existentes. Los números reales son
+  política de la operación, no constantes técnicas.
 - **Nombre de despliegue y dominio** (`planner.<dominio>`), y si comparte VM con
   AeroControl.
-- **Autonomía operacional y reserva de batería** por modelo de aeronave: son
-  números de política de la operación, no constantes técnicas. Inventarlos
-  convierte la validación en un estorbo que alguien va a desactivar.
+- **Proveedor de teselas** si OpenFreeMap o Esri no convencen: se cambia en un
+  solo archivo, `packages/frontend/src/lib/mapStyles.ts`.

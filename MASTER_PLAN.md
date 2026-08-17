@@ -160,11 +160,63 @@ sola con estadísticas confiables.
 
 | #      | Tarea                                                                                                                                                                         | Estado |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `F1.1` | `packages/mission-core/photogrammetry`: GSD ↔ altura, footprint, traslape frontal/lateral → separación de líneas y de disparos, intervalo, velocidad máxima sin _motion blur_ | ⬜     |
-| `F1.2` | Catálogo de cámaras y aeronaves, partiendo por el **DJI Mavic 3E** (sensor, focal, resolución, autonomía)                                                                     | ⬜     |
-| `F1.3` | **Sustituir** el `spacingM` manual del panel de grilla por la separación derivada del traslape y la altura (ver hallazgo `F0.4`: no hay nada que envolver, se construye)      | ⬜     |
-| `F1.4` | Panel de estadísticas: distancia, duración, superficie, nº de fotos, baterías estimadas                                                                                       | ⬜     |
-| `F1.5` | División por baterías: si la misión excede la autonomía operacional, proponer el corte en N vuelos                                                                            | ⬜     |
+| `F1.1` | `packages/mission-core/photogrammetry`: GSD ↔ altura, footprint, traslape frontal/lateral → separación de líneas y de disparos, intervalo, velocidad máxima sin _motion blur_ | ✅     |
+| `F1.2` | Catálogo de cámaras y aeronaves, partiendo por el **DJI Mavic 3E** (sensor, focal, resolución, autonomía)                                                                     | ✅     |
+| `F1.3` | **Sustituir** el `spacingM` manual del panel de grilla por la separación derivada del traslape y la altura                                                                    | ✅     |
+| `F1.4` | Panel de estadísticas: distancia, duración, nº de fotos, baterías estimadas                                                                                                   | ✅     |
+| `F1.5` | División por baterías: si la misión excede la autonomía operacional, proponer el corte en N vuelos                                                                            | ✅     |
+
+### El motor (`packages/mission-core`)
+
+Paquete de dominio puro: **no importa React, ni el mapa, ni el DOM, ni formato de
+fabricante alguno**. 32 pruebas en Node, sin navegador.
+
+- `photogrammetry/camera.ts` — GSD por eje, GSD nominal (el eje más grueso, para
+  no prometer una resolución que la imagen no entrega en toda dirección),
+  altura para un GSD objetivo, y footprint con orientación de cámara explícita.
+- `photogrammetry/coverage.ts` — traslapes → separación de líneas y de disparos,
+  y velocidad recomendada limitada por lo que primero muerda: _motion blur_,
+  intervalo mínimo de la cámara o techo de la aeronave. El plan dice **cuál** fue.
+- `catalog/aircraft.ts` — Mavic 3E con su fuente citada.
+- `mission/battery.ts` — división por baterías, en tramos **iguales**: partir en
+  un vuelo completo más un muñón de tres minutos es aritmética correcta y mala
+  operación.
+- `mission/statistics.ts` — distancia, duración y nº de fotos.
+
+**Verificación.** El oráculo es la ficha técnica de DJI por dos caminos
+independientes: la fórmula sensor/focal debe coincidir con pitch × altura /
+focal usando el pitch publicado de 3,3 µm, y el resultado a 100 m debe dar los
+~2,7 cm/px que DJI publica. Valores que produce hoy:
+
+| Altura | GSD        | Separación @70 % | Ancho de barrido |
+| ------ | ---------- | ---------------- | ---------------- |
+| 50 m   | 1,34 cm/px | 21,3 m           | 70,9 m           |
+| 80 m   | 2,15 cm/px | 34,0 m           | 113,4 m          |
+| 100 m  | 2,68 cm/px | 42,5 m           | 141,7 m          |
+
+Un GSD de 2 cm/px cae en 74,5 m, que es la cifra que da cualquier calculadora
+fotogramétrica para este equipo.
+
+**Decisión registrada:** `planBatteries` **no tiene autonomía por defecto**. La
+cifra del fabricante es de laboratorio; la que decide si una tripulación vuela es
+política de la operación. Inventar una convertiría un control de seguridad en un
+estorbo que alguien termina desactivando.
+
+### Lo que cambió en la interfaz
+
+- **El panel de grilla pide traslape, no separación.** La separación se deriva y
+  se muestra junto al GSD que resulta.
+- **El aviso de batería dice cuántas y dónde cortar.** Antes era un binario
+  "excede el máximo"; ahora informa `N baterías — split evenly: 18:20 + 18:20`.
+  Saber que la misión necesita tres baterías es accionable; saber que "es
+  demasiado larga" no lo es.
+- **La configuración separa autonomía de reserva.** Son dos números distintos y
+  ambos son decisión de la operación, así que el panel lo dice explícitamente.
+  La reserva entra con valor 0 a propósito: reproduce el comportamiento anterior
+  en vez de cambiar en silencio lo que las misiones existentes reportan.
+
+Queda fuera la **superficie cubierta**: exige el polígono del AOI, no solo la
+ruta, y llega con la Fase 2.
 
 **Oráculo:** mismo polígono y mismos parámetros en **GeoFlight Planner** sobre
 QGIS; las cifras deben coincidir. Tests unitarios puros, sin navegador.
