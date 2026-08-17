@@ -20,15 +20,20 @@ verificarse, está en el lugar equivocado.
 ```
 VM / Docker Compose
 ├── AeroControl        Django · centro operacional (existente, independiente)
-├── WebODM             procesamiento fotogramétrico · contenedor aislado (AGPL)
-└── AeroPlanner        fork de DroneRoute (MIT) · planificación y simulación
+└── AeroPlanner        derivado de DroneRoute (MIT) · planificación y simulación
 ```
 
-Los tres funcionan por separado. Que uno esté caído no detiene a los otros.
+Ambos funcionan por separado. Que uno esté caído no detiene al otro.
 
-**WebODM va en su propio contenedor y esa separación no es casual:** es AGPL-3.0,
-y aislarlo como servicio evita que su licencia alcance al código MIT de
-AeroPlanner. Se le habla por su API HTTP, nunca enlazando su código.
+**No hay servicio de procesamiento fotogramétrico, y es deliberado.** Reconstruir
+una ortofoto o una nube de puntos desde cientos de fotos pide horas de CPU y
+decenas de GB de RAM, y no hay hardware para eso. Lo que sí hace la aplicación es
+**abrir productos ya generados**: un COG se lee por rangos HTTP y un COPC trae un
+octree interno, de modo que el navegador descarga únicamente lo que cabe en
+pantalla. El visor es trabajo del cliente, no del servidor.
+
+Si alguna vez hace falta procesar, la vía es un equipo dedicado o un servicio en
+la nube — decisión de presupuesto, no de arquitectura.
 
 ## Estructura del repositorio
 

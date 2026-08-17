@@ -41,6 +41,16 @@ export {
 export type { CorridorRequest, CorridorPlan } from "./corridor/corridor.js";
 export { planCorridor, offsetPolyline } from "./corridor/corridor.js";
 
+export type {
+  CameraAim,
+  CorridorWaypoint,
+  CorridorWaypointRequest,
+} from "./corridor/waypoints.js";
+export {
+  waypointsAlongLine,
+  waypointsForCorridor,
+} from "./corridor/waypoints.js";
+
 export type { AircraftSpec } from "./catalog/aircraft.js";
 export {
   MAVIC_3E,

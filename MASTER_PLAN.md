@@ -278,7 +278,7 @@ minero sin dibujarlo waypoint por waypoint.
 | `F2.1` | Entrada del eje: dibujado en el mapa o importado desde KML                                                    | ⬜ falta la interfaz |
 | `F2.2` | `packages/mission-core/corridor`: eje → líneas paralelas con la separación del motor fotogramétrico           | ✅                   |
 | `F2.3` | Tratamiento de curvas y vértices cerrados (sin waypoints imposibles ni giros que la aeronave no pueda seguir) | ✅                   |
-| `F2.4` | Waypoints con orientación de cámara adecuada al corredor                                                      | ⬜                   |
+| `F2.4` | Waypoints con orientación de cámara adecuada al corredor                                                      | ✅                   |
 
 **Oráculo:** corredor real de faena, comparado contra el generado por GeoFlight.
 
@@ -305,6 +305,23 @@ diferencia está medida en las pruebas.
 Los offsets son simétricos respecto al eje: un número impar de líneas deja una
 por el centro, uno par lo cabalga. En ambos casos el corredor queda centrado en
 lo que el operador dibujó.
+
+### Waypoints del corredor (`corridor/waypoints.ts`)
+
+**Se camina por distancia, no por vértice.** Un eje dibujado a mano tiene
+vértices cada pocos metros en una curva y ninguno durante un kilómetro en la
+recta; la cámara tiene que disparar a intervalo constante sin importar cómo se
+dibujó. El recorrido acumula longitud de arco y arrastra el resto de un segmento
+al siguiente, así que el espaciado **no se reinicia en cada vértice** — ese es el
+error clásico, y hay una prueba que lo vigila.
+
+La última posición siempre recibe waypoint aunque quede a menos de un espaciado,
+para que la línea se vuele hasta el final en vez de cortarse antes.
+
+**Dos formas de apuntar la cámara:** `nadir` (gimbal a −90°, el estándar de
+mapeo) y `side`, que gira 90° para fotografiar una cara — una torre de alta
+tensión, un talud de corte. En modo lateral la aeronave sigue el eje y lo que
+cambia es hacia dónde mira la cámara.
 
 ---
 
