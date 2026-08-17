@@ -28,6 +28,7 @@ import type {
   TemplateType,
   OrbitParams,
   GridParams,
+  CorridorParams,
   FacadeParams,
   PencilParams,
 } from "@/lib/templates";
@@ -35,6 +36,7 @@ import type { PointOfInterest } from "@droneroute/shared";
 import {
   lineSpacingForOverlapM,
   nominalGsdCm,
+  planCoverage,
   MAVIC_3E_WIDE,
 } from "@aeroplanner/mission-core";
 
@@ -42,10 +44,12 @@ interface TemplateConfigPanelProps {
   type: TemplateType;
   orbitParams?: OrbitParams | null;
   gridParams?: GridParams | null;
+  corridorParams?: CorridorParams | null;
   facadeParams?: FacadeParams | null;
   pencilParams?: PencilParams | null;
   onOrbitChange?: (params: OrbitParams) => void;
   onGridChange?: (params: GridParams) => void;
+  onCorridorChange?: (params: CorridorParams) => void;
   onFacadeChange?: (params: FacadeParams) => void;
   onPencilChange?: (params: PencilParams) => void;
   onApply: () => void;
@@ -58,10 +62,12 @@ export function TemplateConfigPanel({
   type,
   orbitParams,
   gridParams,
+  corridorParams,
   facadeParams,
   pencilParams,
   onOrbitChange,
   onGridChange,
+  onCorridorChange,
   onFacadeChange,
   onPencilChange,
   onApply,
@@ -75,17 +81,21 @@ export function TemplateConfigPanel({
       ? "Orbit"
       : type === "grid"
         ? "Grid survey"
-        : type === "facade"
-          ? "Facade scan"
-          : "Pencil path";
+        : type === "corridor"
+          ? "Corridor"
+          : type === "facade"
+            ? "Facade scan"
+            : "Pencil path";
   const description =
     type === "orbit"
       ? "Circular flight path around a center point. Adjust the radius, number of points, and enable POI to keep the camera focused on the center."
       : type === "grid"
-        ? "Lawn-mower zigzag pattern for systematic area coverage. Control line spacing for overlap and rotation to align with the terrain."
-        : type === "facade"
-          ? "Vertical scanning pattern along a wall or building face. Set the standoff distance, altitude range, and grid density for full coverage."
-          : "Freehand flight path drawn on the map. Adjust the number of waypoints to control how closely the path is followed.";
+        ? "Lawn-mower zigzag pattern for systematic area coverage. Set the side overlap and the line spacing follows from the camera."
+        : type === "corridor"
+          ? "Parallel lines along an axis, for power lines, roads and haul routes. Line spacing and shooting interval come from the overlap you set."
+          : type === "facade"
+            ? "Vertical scanning pattern along a wall or building face. Set the standoff distance, altitude range, and grid density for full coverage."
+            : "Freehand flight path drawn on the map. Adjust the number of waypoints to control how closely the path is followed.";
 
   // Stop all pointer/keyboard/wheel events from reaching Leaflet (native DOM level)
   const panelRef = useRef<HTMLDivElement>(null);
@@ -319,6 +329,151 @@ export function TemplateConfigPanel({
               {distanceLabel(unitSystem)}
             </span>{" "}
             · {MAVIC_3E_WIDE.label}
+          </div>
+        </div>
+      )}
+
+      {/* Corridor params */}
+      {type === "corridor" && corridorParams && onCorridorChange && (
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div>
+            <Label className="text-[10px]">
+              Altitude ({heightLabel(unitSystem)})
+            </Label>
+            <NumericInput
+              value={toDisplayHeight(corridorParams.altitude, unitSystem)}
+              onChange={(v) =>
+                onCorridorChange({
+                  ...corridorParams,
+                  altitude: fromDisplayHeight(v, unitSystem),
+                })
+              }
+              min={5}
+              step={5}
+              fallback={80}
+              className="h-7 text-xs"
+            />
+          </div>
+          <div>
+            <Label className="text-[10px]">Lines</Label>
+            <NumericInput
+              value={corridorParams.lineCount}
+              onChange={(v) =>
+                onCorridorChange({
+                  ...corridorParams,
+                  lineCount: Math.min(9, Math.max(1, Math.round(v))),
+                })
+              }
+              min={1}
+              max={9}
+              fallback={3}
+              integer
+              className="h-7 text-xs"
+            />
+          </div>
+          <div>
+            <Label className="text-[10px]">Side overlap (%)</Label>
+            <NumericInput
+              value={Math.round(corridorParams.sideOverlap * 100)}
+              onChange={(v) =>
+                onCorridorChange({
+                  ...corridorParams,
+                  sideOverlap: Math.min(95, Math.max(0, v)) / 100,
+                })
+              }
+              min={0}
+              max={95}
+              step={5}
+              fallback={70}
+              className="h-7 text-xs"
+            />
+          </div>
+          <div>
+            <Label className="text-[10px]">Front overlap (%)</Label>
+            <NumericInput
+              value={Math.round(corridorParams.frontOverlap * 100)}
+              onChange={(v) =>
+                onCorridorChange({
+                  ...corridorParams,
+                  frontOverlap: Math.min(95, Math.max(0, v)) / 100,
+                })
+              }
+              min={0}
+              max={95}
+              step={5}
+              fallback={80}
+              className="h-7 text-xs"
+            />
+          </div>
+          <div className="col-span-2 flex items-center gap-3">
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+              <input
+                type="radio"
+                checked={corridorParams.aim === "nadir"}
+                onChange={() =>
+                  onCorridorChange({ ...corridorParams, aim: "nadir" })
+                }
+              />
+              Nadir
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+              <input
+                type="radio"
+                checked={corridorParams.aim === "side"}
+                onChange={() =>
+                  onCorridorChange({ ...corridorParams, aim: "side" })
+                }
+              />
+              Side view
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer ml-auto">
+              <input
+                type="checkbox"
+                checked={corridorParams.addPhotos}
+                onChange={(e) =>
+                  onCorridorChange({
+                    ...corridorParams,
+                    addPhotos: e.target.checked,
+                  })
+                }
+                className="rounded"
+              />
+              Photos
+            </label>
+          </div>
+          {/* What the chosen parameters actually produce. */}
+          <div className="col-span-2 text-[10px] text-muted-foreground border-t border-border pt-1.5">
+            {(() => {
+              const plan = planCoverage({
+                camera: MAVIC_3E_WIDE,
+                altitudeAglM: corridorParams.altitude,
+                frontOverlap: corridorParams.frontOverlap,
+                sideOverlap: corridorParams.sideOverlap,
+              });
+              const widthM =
+                (corridorParams.lineCount - 1) * plan.lineSpacingM +
+                plan.swathWidthM;
+              return (
+                <>
+                  GSD{" "}
+                  <span className="text-foreground font-medium">
+                    {plan.gsdCm.toFixed(1)} cm/px
+                  </span>{" "}
+                  · corridor width{" "}
+                  <span className="text-foreground font-medium">
+                    {toDisplayDistance(widthM, unitSystem).toFixed(0)}{" "}
+                    {distanceLabel(unitSystem)}
+                  </span>{" "}
+                  · lines every{" "}
+                  <span className="text-foreground font-medium">
+                    {toDisplayDistance(plan.lineSpacingM, unitSystem).toFixed(
+                      1,
+                    )}{" "}
+                    {distanceLabel(unitSystem)}
+                  </span>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

@@ -30,15 +30,12 @@ de cámara). Si falla, hay que entender por qué **antes** de seguir.
 
 ### Y después, en este orden
 
-1. **Terminar la Fase 2 — corredores.** El dominio está completo
-   (`packages/mission-core/corridor/`, 28 pruebas): offsets con esquinas
-   correctas, serpenteo y generación de waypoints con orientación de cámara.
-   Falta solo la **interfaz** (`F2.1`): dibujar el eje en el mapa o importarlo
-   desde KML, y enganchar `planCorridor` + `waypointsForCorridor` al panel de
-   plantillas — el mismo patrón que ya sigue la grilla.
-2. **Fase 3 — terrain following.** `queryTerrainElevation()` de MapLibre es el
+1. **Fase 3 — terrain following.** `queryTerrainElevation()` de MapLibre es el
    camino directo para muestrear el DEM que la vista 3D ya carga.
-3. **Fase 4 — simulación**, y **Fase 5 — integración con AeroControl**.
+2. **Fase 4 — simulación**, y **Fase 5 — integración con AeroControl**.
+3. **Deuda menor de la Fase 2:** el eje del corredor es hoy un tramo recto. El
+   motor acepta polilíneas de N vértices, así que dibujar un eje quebrado o
+   importarlo desde KML es cambiar la entrada, no el cálculo.
 
 ## Alcance: planificar y visualizar, nunca procesar
 

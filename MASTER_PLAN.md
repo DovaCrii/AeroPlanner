@@ -273,12 +273,12 @@ QGIS; las cifras deben coincidir. Tests unitarios puros, sin navegador.
 **Objetivo de salida:** planificar una línea eléctrica, un camino o un corredor
 minero sin dibujarlo waypoint por waypoint.
 
-| #      | Tarea                                                                                                         | Estado               |
-| ------ | ------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `F2.1` | Entrada del eje: dibujado en el mapa o importado desde KML                                                    | ⬜ falta la interfaz |
-| `F2.2` | `packages/mission-core/corridor`: eje → líneas paralelas con la separación del motor fotogramétrico           | ✅                   |
-| `F2.3` | Tratamiento de curvas y vértices cerrados (sin waypoints imposibles ni giros que la aeronave no pueda seguir) | ✅                   |
-| `F2.4` | Waypoints con orientación de cámara adecuada al corredor                                                      | ✅                   |
+| #      | Tarea                                                                                                         | Estado                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `F2.1` | Entrada del eje: arrastrando sobre el mapa                                                                    | ✅ eje recto; polilínea e importación KML pendientes |
+| `F2.2` | `packages/mission-core/corridor`: eje → líneas paralelas con la separación del motor fotogramétrico           | ✅                                                   |
+| `F2.3` | Tratamiento de curvas y vértices cerrados (sin waypoints imposibles ni giros que la aeronave no pueda seguir) | ✅                                                   |
+| `F2.4` | Waypoints con orientación de cámara adecuada al corredor                                                      | ✅                                                   |
 
 **Oráculo:** corredor real de faena, comparado contra el generado por GeoFlight.
 
@@ -322,6 +322,29 @@ para que la línea se vuele hasta el final en vez de cortarse antes.
 mapeo) y `side`, que gira 90° para fotografiar una cara — una torre de alta
 tensión, un talud de corte. En modo lateral la aeronave sigue el eje y lo que
 cambia es hacia dónde mira la cámara.
+
+### En la interfaz
+
+**Corridor** entra al menú de plantillas (atajo `C`). Se arrastra sobre el mapa
+para fijar el eje y el panel pide altura, número de líneas, traslape lateral y
+frontal, y el modo de cámara. Debajo muestra lo que esos parámetros producen:
+GSD, ancho de corredor cubierto y separación entre líneas.
+
+Verificado con un eje de 2 km a 80 m y traslape 80/70:
+
+| Líneas | Ancho cubierto | Largo total | Giros | Waypoints |
+| ------ | -------------- | ----------- | ----- | --------- |
+| 1      | 113 m          | 1,99 km     | 0 m   | 119       |
+| 3      | 181 m          | 5,98 km     | 68 m  | 357       |
+| 5      | 249 m          | 9,97 km     | 136 m | 595       |
+
+Los giros salen exactamente `(N−1) × 34 m`, una separación de línea cada uno:
+la prueba de que el serpenteo hace lo que promete. La separación real entre
+disparos midió 17,0 m constante, igual al valor calculado.
+
+**Limitación conocida:** el eje es hoy un **tramo recto** (se arrastra de un
+punto a otro). El motor acepta polilíneas de N vértices, así que dibujar un eje
+quebrado o importarlo desde KML es cambiar la entrada, no el cálculo.
 
 ---
 
