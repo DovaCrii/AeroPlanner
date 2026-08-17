@@ -1,15 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" role="img" aria-labelledby="title desc">
   <title id="title">AeroPlanner mission mark</title>
-  <desc id="desc">Amber drone above a planned survey grid for AeroPlanner</desc>
+  <desc id="desc">Amber drone above a survey grid with a start waypoint and a heading arrow, for AeroPlanner</desc>
   <g fill="none" stroke="#FF9F1C" stroke-linecap="round" stroke-linejoin="round" stroke-width="6">
-    <path d="M64 30 44 19M96 30l20-11M64 46 44 56M96 46l20 10"/>
-    <circle cx="36" cy="15" r="9"/>
-    <circle cx="124" cy="15" r="9"/>
-    <circle cx="36" cy="60" r="9"/>
-    <circle cx="124" cy="60" r="9"/>
-    <rect x="60" y="26" width="40" height="24" rx="10" fill="#1B2A4A"/>
-    <circle cx="71" cy="38" r="3.5" fill="#FF9F1C" stroke="none"/>
-    <circle cx="89" cy="38" r="3.5" fill="#FF9F1C" stroke="none"/>
-    <path d="M34 86h92M34 100h92M34 114h92"/>
+    <path d="M68 25 52 17M92 25l16-8M68 35 52 46M92 35l16 11"/>
+    <circle cx="42" cy="13" r="8"/>
+    <circle cx="118" cy="13" r="8"/>
+    <circle cx="42" cy="46" r="8"/>
+    <circle cx="118" cy="46" r="8"/>
+    <rect x="64" y="21" width="32" height="18" rx="8" fill="#1B2A4A"/>
+    <circle cx="74" cy="30" r="3" fill="#FF9F1C" stroke="none"/>
+    <circle cx="86" cy="30" r="3" fill="#FF9F1C" stroke="none"/>
+    <path d="M36 82h88M36 100h88M62 70v42M98 70v42"/>
+    <path d="m118 94 6 6-6 6"/>
+    <circle cx="62" cy="82" r="5" fill="#FF9F1C" stroke="none"/>
   </g>
 </svg>
