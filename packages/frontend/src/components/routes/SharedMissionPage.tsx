@@ -13,12 +13,12 @@ import {
   User,
   ArrowLeft,
 } from "lucide-react";
-import Map, { Source, Layer, Marker } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
+import Map, { Source, Layer, Marker } from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { Button } from "@/components/ui/button";
 import { useMissionStore } from "@/store/missionStore";
 import { useAuthStore } from "@/store/authStore";
-import { useConfigStore } from "@/store/configStore";
+import { getMapStyle } from "@/lib/mapStyles";
 import { api } from "@/lib/api";
 import { DRONE_MODELS } from "@droneroute/shared";
 import { getObstacleWarnings } from "@/lib/geo";
@@ -119,7 +119,6 @@ function SharedMissionMap({
   pois: PointOfInterest[];
   obstacles: Obstacle[];
 }) {
-  const mapboxToken = useConfigStore((s) => s.mapboxToken);
   const warnings = useMemo(
     () => getObstacleWarnings(waypoints, obstacles),
     [waypoints, obstacles],
@@ -201,12 +200,9 @@ function SharedMissionMap({
       ? [waypoints[0].longitude, waypoints[0].latitude]
       : [2.1686, 41.3874];
 
-  if (!mapboxToken) return null;
-
   return (
     <div className="h-[360px] w-full rounded-lg overflow-hidden border border-border">
       <Map
-        mapboxAccessToken={mapboxToken}
         initialViewState={{
           longitude: center[0],
           latitude: center[1],
@@ -219,7 +215,7 @@ function SharedMissionMap({
             : {}),
         }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle="mapbox://styles/mapbox/dark-v11"
+        mapStyle={getMapStyle("street")}
         doubleClickZoom={false}
         attributionControl={false}
       >

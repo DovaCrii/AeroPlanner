@@ -34,6 +34,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // npm hoists @vis.gl/react-maplibre to the workspace root but keeps
+      // maplibre-gl inside this package, so the library cannot resolve its own
+      // peer dependency by walking up node_modules. Pinning the path here
+      // makes every "maplibre-gl" import — ours and the library's — land on
+      // the single installed copy.
+      "maplibre-gl": path.resolve(__dirname, "./node_modules/maplibre-gl"),
     },
   },
   server: {

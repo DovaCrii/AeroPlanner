@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Source, Layer } from "react-map-gl/mapbox";
+import { Source, Layer } from "react-map-gl/maplibre";
 import type { Waypoint, PointOfInterest } from "@droneroute/shared";
 
 interface CameraFrustumProps {

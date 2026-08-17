@@ -33,37 +33,37 @@ body {
 }
 
 /* Fix mapbox z-index conflicts */
-.mapboxgl-map {
+.maplibregl-map {
   z-index: 0;
 }
-.mapboxgl-ctrl-bottom-left,
-.mapboxgl-ctrl-bottom-right {
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
   z-index: 2;
 }
 
 /* Dark theme for mapbox popups */
-.building-popup .mapboxgl-popup-content {
+.building-popup .maplibregl-popup-content {
   background: #18181b;
   border: 1px solid #27272a;
   border-radius: 8px;
   padding: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
-.building-popup .mapboxgl-popup-tip {
+.building-popup .maplibregl-popup-tip {
   border-top-color: #18181b;
 }
-.building-popup .mapboxgl-popup-close-button {
+.building-popup .maplibregl-popup-close-button {
   color: #a1a1aa;
   font-size: 16px;
   padding: 2px 6px;
 }
-.building-popup .mapboxgl-popup-close-button:hover {
+.building-popup .maplibregl-popup-close-button:hover {
   color: #fafafa;
   background: transparent;
 }
 
 /* Airspace zone tooltip */
-.airspace-tooltip .mapboxgl-popup-content {
+.airspace-tooltip .maplibregl-popup-content {
   background: #18181b;
   border: 1px solid #27272a;
   border-radius: 8px;
@@ -71,7 +71,7 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   color: #fafafa;
 }
-.airspace-tooltip .mapboxgl-popup-tip {
+.airspace-tooltip .maplibregl-popup-tip {
   border-top-color: #18181b;
 }
 
@@ -91,7 +91,7 @@ body {
 }
 
 /* Geocoder search — match app dark theme */
-.mapboxgl-ctrl-geocoder {
+.maplibregl-ctrl-geocoder {
   background-color: rgba(9, 9, 11, 0.9) !important;
   border: 1px solid #27272a !important;
   border-radius: 0.375rem !important;
@@ -100,64 +100,64 @@ body {
   font-size: 12px !important;
   min-width: 36px !important;
 }
-.mapboxgl-ctrl-geocoder--collapsed {
+.maplibregl-ctrl-geocoder--collapsed {
   min-width: 28px !important;
   width: 28px !important;
   height: 28px !important;
 }
-.mapboxgl-ctrl-geocoder:not(.mapboxgl-ctrl-geocoder--collapsed) {
+.maplibregl-ctrl-geocoder:not(.maplibregl-ctrl-geocoder--collapsed) {
   width: 260px !important;
 }
-.mapboxgl-ctrl-geocoder--icon-search {
+.maplibregl-ctrl-geocoder--icon-search {
   fill: #a1a1aa !important;
   width: 16px !important;
   height: 16px !important;
   top: 6px !important;
   left: 6px !important;
 }
-.mapboxgl-ctrl-geocoder--collapsed .mapboxgl-ctrl-geocoder--icon-search {
+.maplibregl-ctrl-geocoder--collapsed .maplibregl-ctrl-geocoder--icon-search {
   top: 6px !important;
   left: 6px !important;
 }
-.mapboxgl-ctrl-geocoder--icon-close {
+.maplibregl-ctrl-geocoder--icon-close {
   fill: #a1a1aa !important;
   width: 14px !important;
   height: 14px !important;
 }
-.mapboxgl-ctrl-geocoder--icon-close:hover {
+.maplibregl-ctrl-geocoder--icon-close:hover {
   fill: #fafafa !important;
 }
-.mapboxgl-ctrl-geocoder--icon-loading {
+.maplibregl-ctrl-geocoder--icon-loading {
   fill: #a1a1aa !important;
 }
-.mapboxgl-ctrl-geocoder--input {
+.maplibregl-ctrl-geocoder--input {
   color: #fafafa !important;
   font-size: 12px !important;
   height: 28px !important;
   padding: 4px 28px 4px 28px !important;
 }
-.mapboxgl-ctrl-geocoder--input::placeholder {
+.maplibregl-ctrl-geocoder--input::placeholder {
   color: #71717a !important;
 }
-.mapboxgl-ctrl-geocoder--input:focus {
+.maplibregl-ctrl-geocoder--input:focus {
   outline: none !important;
 }
-.mapboxgl-ctrl-geocoder .suggestions {
+.maplibregl-ctrl-geocoder .suggestions {
   background-color: rgba(9, 9, 11, 0.95) !important;
   border: 1px solid #27272a !important;
   border-radius: 0.375rem !important;
   margin-top: 4px !important;
   font-size: 12px !important;
 }
-.mapboxgl-ctrl-geocoder .suggestions > li > a {
+.maplibregl-ctrl-geocoder .suggestions > li > a {
   color: #a1a1aa !important;
   padding: 6px 10px !important;
 }
-.mapboxgl-ctrl-geocoder .suggestions > .active > a,
-.mapboxgl-ctrl-geocoder .suggestions > li > a:hover {
+.maplibregl-ctrl-geocoder .suggestions > .active > a,
+.maplibregl-ctrl-geocoder .suggestions > li > a:hover {
   color: #fafafa !important;
   background-color: #27272a !important;
 }
-.mapboxgl-ctrl-geocoder--button {
+.maplibregl-ctrl-geocoder--button {
   background: none !important;
 }

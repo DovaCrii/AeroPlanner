@@ -1,4 +1,4 @@
-import { Marker } from "react-map-gl/mapbox";
+import { Marker } from "react-map-gl/maplibre";
 import type { TemplateResult } from "@/lib/templates";
 
 interface TemplatePreviewProps {

@@ -77,7 +77,6 @@ app.get("/api/config", (_req, res) => {
   res.json({
     selfHosted,
     googleClientId: selfHosted ? undefined : process.env.GOOGLE_CLIENT_ID,
-    mapboxToken: process.env.MAPBOX_TOKEN || "",
     defaultMapView: resolveDefaultMapView(),
   });
 });

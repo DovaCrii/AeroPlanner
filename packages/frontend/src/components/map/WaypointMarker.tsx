@@ -4,7 +4,7 @@ import { usePreferencesStore } from "@/store/preferencesStore";
 import { formatHeight, formatSpeed } from "@/lib/units";
 import type { Waypoint } from "@droneroute/shared";
 import { useMemo, useCallback, useState, useEffect } from "react";
-import { useMap } from "react-map-gl/mapbox";
+import { useMap } from "react-map-gl/maplibre";
 import { Marker3D } from "./Marker3D";
 
 interface WaypointMarkerProps {
@@ -59,10 +59,17 @@ function getActionIconsHtml(waypoint: Waypoint): string {
   `;
 }
 
+/** Equatorial circumference in meters, for the meters-per-pixel scale. */
+const EARTH_CIRCUMFERENCE_M = 40075016.686;
+
 /**
  * Renders a subtle vertical drop line from the waypoint marker down to the ground.
- * Computes pixel distance between altitude and ground using map.project(),
- * updating on every camera move.
+ *
+ * Mapbox GL v3 offered `map.project(lngLat, altitude)`; MapLibre's `project()`
+ * takes coordinates only, so the pixel length is derived from the map scale
+ * instead. A vertical pole of H meters grows on screen as the camera pitches
+ * over, and collapses to nothing when looking straight down — hence the sine.
+ * It is an orthographic approximation, which is plenty for a decorative line.
  */
 function DropLine({ waypoint }: { waypoint: Waypoint }) {
   const { current: mapRef } = useMap();
@@ -73,11 +80,13 @@ function DropLine({ waypoint }: { waypoint: Waypoint }) {
     const map = mapRef.getMap();
 
     const update = () => {
-      const lngLat = { lng: waypoint.longitude, lat: waypoint.latitude };
-      const atAlt = map.project(lngLat, waypoint.height);
-      const atGround = map.project(lngLat, 0);
-      // Vertical distance in pixels (ground is below, so larger y)
-      setLength(Math.max(0, atGround.y - atAlt.y));
+      const latRad = (waypoint.latitude * Math.PI) / 180;
+      const pitchRad = (map.getPitch() * Math.PI) / 180;
+      const metersPerPixel =
+        (EARTH_CIRCUMFERENCE_M * Math.cos(latRad)) /
+        (512 * Math.pow(2, map.getZoom()));
+      const px = (waypoint.height / metersPerPixel) * Math.sin(pitchRad);
+      setLength(Math.max(0, px));
     };
 
     update();

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { Source, Layer, Marker, useMap } from "react-map-gl/mapbox";
+import { Source, Layer, Marker, useMap } from "react-map-gl/maplibre";
 import { useMissionStore } from "@/store/missionStore";
 import { TemplateConfigPanel } from "./TemplateConfigPanel";
 import { TemplatePreview } from "./TemplatePreview";

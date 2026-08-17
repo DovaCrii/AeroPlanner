@@ -1,4 +1,5 @@
-import { Source, Layer, Marker } from "react-map-gl/mapbox";
+import { Source, Layer, Marker } from "react-map-gl/maplibre";
+import type { MarkerDragEvent } from "react-map-gl/maplibre";
 import type { Obstacle } from "@droneroute/shared";
 import { useMissionStore } from "@/store/missionStore";
 import { useMemo } from "react";
@@ -78,7 +79,7 @@ export function ObstaclePolygon({ obstacle }: ObstaclePolygonProps) {
             latitude={pos[0]}
             anchor="center"
             draggable
-            onDragEnd={(e) => {
+            onDragEnd={(e: MarkerDragEvent) => {
               moveObstacleVertex(obstacle.id, i, e.lngLat.lat, e.lngLat.lng);
             }}
           >
