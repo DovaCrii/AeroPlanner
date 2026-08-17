@@ -257,7 +257,16 @@ export interface MissionConfig {
   takeOffSecurityHeight: number;
   globalTransitionalSpeed: number;
   autoFlightSpeed: number;
+  /** Usable flight minutes per battery, as observed by the operation. */
   maxBatteryMinutes: number;
+  /**
+   * Minutes held back as reserve and never planned into a flight.
+   *
+   * Defaults to 0, which reproduces the previous behaviour rather than
+   * silently changing what existing missions report. Setting it is a decision
+   * for the operation — see `HANDOFF.md`.
+   */
+  batteryReserveMinutes: number;
   heightMode: HeightMode;
   globalHeadingMode: HeadingMode;
   globalTurnMode: TurnMode;
@@ -350,6 +359,7 @@ export const DEFAULT_MISSION_CONFIG: MissionConfig = {
   globalTransitionalSpeed: 10,
   autoFlightSpeed: 7,
   maxBatteryMinutes: 25,
+  batteryReserveMinutes: 0,
   heightMode: "aboveGroundLevel",
   globalHeadingMode: "followWayline",
   globalTurnMode: "toPointAndStopWithDiscontinuityCurvature",

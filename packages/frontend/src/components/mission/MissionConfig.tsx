@@ -142,22 +142,47 @@ export function MissionConfig() {
       </div>
 
       <div>
-        <Label className="text-xs">Max battery (min)</Label>
-        <Input
-          type="number"
-          value={config.maxBatteryMinutes}
-          onChange={(e) =>
-            setConfig({
-              maxBatteryMinutes: Math.max(1, parseInt(e.target.value) || 1),
-            })
-          }
-          min={1}
-          max={120}
-          step={1}
-          className="h-8 text-xs"
-        />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs">Battery endurance (min)</Label>
+            <Input
+              type="number"
+              value={config.maxBatteryMinutes}
+              onChange={(e) =>
+                setConfig({
+                  maxBatteryMinutes: Math.max(1, parseInt(e.target.value) || 1),
+                })
+              }
+              min={1}
+              max={120}
+              step={1}
+              className="h-8 text-xs"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Reserve (min)</Label>
+            <Input
+              type="number"
+              value={config.batteryReserveMinutes ?? 0}
+              onChange={(e) =>
+                setConfig({
+                  batteryReserveMinutes: Math.max(
+                    0,
+                    parseInt(e.target.value) || 0,
+                  ),
+                })
+              }
+              min={0}
+              max={60}
+              step={1}
+              className="h-8 text-xs"
+            />
+          </div>
+        </div>
         <div className="text-[10px] text-muted-foreground mt-0.5">
-          Warning when flight time exceeds this limit
+          Endurance is what a battery gives in real conditions, not the
+          manufacturer's hover figure. The reserve is held back and never
+          planned into a flight — both are decisions for your operation.
         </div>
       </div>
 
