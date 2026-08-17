@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" role="img" aria-labelledby="title desc">
+  <title id="title">AeroPlanner mission mark</title>
+  <desc id="desc">Amber drone flying over a planned survey route for AeroPlanner</desc>
+  <g fill="none" stroke="#FF9F1C" stroke-linecap="round" stroke-linejoin="round" stroke-width="6">
+    <path d="M64 27 44 17M96 27l20-10M64 43 44 53M96 43l20 10"/>
+    <circle cx="36" cy="12" r="9"/>
+    <circle cx="124" cy="12" r="9"/>
+    <circle cx="36" cy="58" r="9"/>
+    <circle cx="124" cy="58" r="9"/>
+    <rect x="60" y="23" width="40" height="24" rx="10" fill="#1B2A4A"/>
+    <circle cx="71" cy="35" r="3.5" fill="#FF9F1C" stroke="none"/>
+    <circle cx="89" cy="35" r="3.5" fill="#FF9F1C" stroke="none"/>
+    <path d="M38 90h72a11 11 0 0 1 0 22H38"/>
+    <circle cx="38" cy="90" r="5" fill="#FF9F1C" stroke="none"/>
+    <circle cx="38" cy="112" r="5" fill="#FF9F1C" stroke="none"/>
+  </g>
+</svg>

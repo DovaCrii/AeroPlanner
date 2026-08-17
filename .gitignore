@@ -1,0 +1,47 @@
+# Dependencias
+node_modules/
+.pnpm-store/
+.yarn/
+
+# Build
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# Entorno — nunca confirmar secretos ni tokens de mapas
+.env
+.env.*
+!.env.example
+
+# Datos operativos y productos de vuelo (viven fuera del repositorio)
+data/
+missions/
+uploads/
+*.sqlite
+*.sqlite3
+*.db
+
+# Geodatos pesados: DEM, ortofotos, nubes de puntos
+*.tif
+*.tiff
+*.laz
+*.las
+*.copc.laz
+*.ept
+*.zip
+*.kmz
+!docs/**/*.kmz
+
+# Logs y cachés
+*.log
+npm-debug.log*
+coverage/
+.nyc_output/
+.cache/
+
+# Editores y sistema
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
