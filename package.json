@@ -1,0 +1,33 @@
+{
+  "name": "droneroute-workspace",
+  "version": "0.7.2",
+  "private": true,
+  "description": "DJI Waypoint Mission KMZ Builder",
+  "workspaces": [
+    "packages/shared",
+    "packages/backend",
+    "packages/frontend",
+    "packages/cli"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w packages/backend\" \"npm run dev -w packages/frontend\"",
+    "build": "npm run build -w packages/shared && npm run build -w packages/backend && npm run build -w packages/frontend && npm run build -w packages/cli",
+    "start": "npm run start -w packages/backend",
+    "lint": "oxlint packages/",
+    "lint:fix": "oxlint --fix packages/",
+    "fmt": "prettier --write .",
+    "fmt:check": "prettier --check .",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "@types/mapbox__mapbox-gl-geocoder": "^5.1.1",
+    "concurrently": "^10.0.3",
+    "lefthook": "^2.1.9",
+    "oxlint": "^1.68.0",
+    "prettier": "^3.5.0",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@mapbox/mapbox-gl-geocoder": "^5.1.2"
+  }
+}

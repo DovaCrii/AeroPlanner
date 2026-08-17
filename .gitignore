@@ -7,6 +7,7 @@ node_modules/
 dist/
 build/
 .vite/
+tsconfig.tsbuildinfo
 *.tsbuildinfo
 
 # Entorno — nunca confirmar secretos ni tokens de mapas
@@ -33,12 +34,14 @@ uploads/
 *.kmz
 !docs/**/*.kmz
 
-# Logs y cachés
+# Logs, cachés y artefactos de pruebas
 *.log
 npm-debug.log*
 coverage/
 .nyc_output/
 .cache/
+.playwright-mcp
+audit-*.png
 
 # Editores y sistema
 .DS_Store

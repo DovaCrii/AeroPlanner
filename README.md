@@ -9,7 +9,7 @@
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-FF9F1C.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/typescript-5.x-1B2A4A.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/react-19-1B2A4A.svg)](https://react.dev/)
-[![Estado](https://img.shields.io/badge/estado-fase%200%20·%20sin%20código-FF9F1C.svg)](#estado-actual)
+[![Estado](https://img.shields.io/badge/estado-fase%200%20·%20base%20heredada-FF9F1C.svg)](#estado-actual)
 
 Aplicación hermana de **[AeroControl](https://github.com/DovaCrii/AeroControl)** · funcionan por separado, se comunican cuando conviene
 
@@ -37,15 +37,16 @@ de la operación.
 
 ## Qué resuelve
 
-| Módulo | Qué hace |
-| --- | --- |
-| **Planificación** | Área/survey, corredores lineales, waypoints manuales y órbitas, desde geometría dibujada o importada (KML/KMZ) |
-| **Fotogrametría** | GSD ↔ altura de vuelo, footprint de cámara, traslape frontal y lateral, separación de líneas, intervalo de disparo y velocidad recomendada |
-| **Terreno** | Muestreo de DEM/DSM, vuelo a altura constante sobre el suelo (*terrain following*), clearance mínimo y perfil terreno/vuelo |
-| **Simulación** | Recorrido animado de la misión en 2D/3D con línea de tiempo, telemetría estimada y footprints de foto para ver traslapes y huecos |
-| **Validación** | Autonomía y división por baterías, clearance, y contraste contra la envolvente del permiso DGAC (altura máxima, radio, vigencia) |
-| **Exportación** | DJI WPML/KMZ listo para el control, más KML y GeoJSON |
-| **Visor de resultados** | Ortofotos (COG) y nubes de puntos (COPC/Potree) del vuelo ya procesado, reutilizables como base de la siguiente planificación |
+| Módulo | Qué hace | Estado |
+| --- | --- | --- |
+| **Planificación** | Waypoints, POI, grid survey, órbita y escaneo de fachada | Heredado |
+| **Exportación** | DJI WPML/KMZ listo para el control, con carga por USB al RC | Heredado |
+| **Fotogrametría** | GSD ↔ altura de vuelo, footprint, traslapes, separación de líneas, intervalo de disparo y velocidad recomendada | Por construir |
+| **Corredores** | Rutas paralelas sobre un eje: líneas eléctricas, caminos, corredores mineros | Por construir |
+| **Terreno** | DEM/DSM, vuelo a altura constante sobre el suelo, clearance mínimo y perfil | Por construir |
+| **Simulación** | Recorrido animado con línea de tiempo, telemetría estimada y footprints de foto | Por construir |
+| **Validación** | Autonomía y baterías, clearance, y contraste contra la envolvente del permiso DGAC | Por construir |
+| **Visor de resultados** | Ortofotos (COG) y nubes de puntos (COPC/Potree) del vuelo procesado | Por construir |
 
 ## Cómo se relaciona con AeroControl
 
@@ -76,11 +77,16 @@ animación — meterlo dentro haría más difícil mantener las dos cosas.
 
 ## Estado actual
 
-**Fase 0 — repositorio recién inicializado.** Hoy este repo contiene la decisión
-de arquitectura, el plan de trabajo y esta documentación; **todavía no hay código
-de aplicación**. El primer paso es partir del fork de
-[DroneRoute](https://github.com/fcsonline/droneroute) (MIT) y auditarlo, en vez de
-escribir un planificador desde cero.
+**Fase 0 — base heredada, en auditoría.** El repositorio ya tiene el código de
+[DroneRoute](https://github.com/fcsonline/droneroute), incorporado con su
+historial completo: la aplicación se levanta y planifica misiones DJI hoy. Lo que
+falta es todo lo que define a AeroPlanner — el motor fotogramétrico, los
+corredores, el terreno, la simulación y la validación contra el permiso.
+
+**Advertencia de la Fase 0:** el código heredado renderiza el mapa con `mapbox-gl`
+y **exige un `MAPBOX_TOKEN` para funcionar**. La migración a MapLibre está
+decidida (ver abajo) pero todavía no hecha: hasta entonces hace falta un token de
+Mapbox para levantar la aplicación.
 
 Lo pendiente vive en dos documentos, no en este README:
 
@@ -91,31 +97,57 @@ Lo pendiente vive en dos documentos, no en este README:
 
 ## Puesta en marcha
 
-Todavía no aplica: no hay código que ejecutar. Cuando la Fase 0 cierre, esta
-sección tendrá el `git clone` + `docker compose up` correspondiente.
+Requisitos: Node.js 20+ y npm. Para el despliegue, Docker.
 
-Mientras tanto, para entender el proyecto en orden:
+```bash
+git clone https://github.com/DovaCrii/AeroPlanner.git
+cd AeroPlanner
+npm install
+cp .env.example .env
+npm run dev
+```
 
-1. [docs/MVP.md](docs/MVP.md) — qué entra en la primera versión y qué no.
-2. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — cómo se separa el dominio de la interfaz.
-3. [docs/REFERENCES.md](docs/REFERENCES.md) — de dónde sale cada pieza y bajo qué licencia.
-4. [MASTER_PLAN.md](MASTER_PLAN.md) — por dónde se empieza.
+Antes de levantar hay que editar el `.env`: poner un `JWT_SECRET` aleatorio de
+verdad y, mientras dure la dependencia de Mapbox, un `MAPBOX_TOKEN` válido.
+
+### Comandos frecuentes
+
+```bash
+npm run build        # obligatorio antes de empujar
+npm run lint         # oxlint
+npm run fmt          # prettier --write
+```
+
+Un hook de `lefthook` corre formato y lint sobre los archivos en stage al
+commitear. La guía completa de trabajo está en [AGENTS.md](AGENTS.md).
 
 ## Decisiones ya tomadas
 
 No se reabren sin que el usuario lo pida (el fundamento está en `docs/`):
 
-- **Fork de DroneRoute**, no desarrollo desde cero — da un planificador usable
-  desde la primera semana y ya resuelve el export DJI WPML/KMZ, que es el
-  requisito crítico de la flota.
+- **Se parte del código de DroneRoute**, no de un desarrollo desde cero — da un
+  planificador usable de inmediato y ya resuelve el export DJI WPML/KMZ, que es
+  el requisito crítico de la flota.
+- **Migración de Mapbox a MapLibre** — `mapbox-gl` v3 es de licencia propietaria,
+  exige token y factura por cargas de mapa. MapLibre (BSD) con teselas libres es
+  coherente con el local-first del proyecto.
 - **Sin CesiumJS en el MVP** — el terreno 3D servido por Cesium ion tiene costo
-  comercial; se usa la vista 3D que el fork ya trae.
+  comercial.
 - **Simulación cinemática, no física** — PX4 SITL y Gazebo quedan fuera: no
   simulan un DJI real y no aportan al objetivo de planificar bien.
 - **AeroControl en solo lectura** durante todo el MVP — está en pausa de
   estabilización; cualquier cambio allá entra por su propio `MASTER_PLAN.md`.
 
+## Créditos
+
+AeroPlanner deriva de **[DroneRoute](https://github.com/fcsonline/droneroute)**,
+de Ferran Basora, bajo licencia MIT. El planificador de waypoints, el motor de
+exportación DJI WPML/KMZ y la CLI de carga al control vienen de ese trabajo. La
+documentación heredada del producto original se conserva en `GUIDE.md`, `SPEC.md`
+y `specs/`.
+
 ## Licencia
 
-MIT. Ver [LICENSE](LICENSE). Las licencias del software de referencia y de las
-dependencias previstas están detalladas en [docs/REFERENCES.md](docs/REFERENCES.md).
+MIT, conservando el aviso de copyright original de DroneRoute — ver
+[LICENSE](LICENSE). Las licencias del software de referencia y de las
+dependencias están detalladas en [docs/REFERENCES.md](docs/REFERENCES.md).

@@ -1,0 +1,70 @@
+# ── Build stage ────────────────────────────────────────────
+FROM node:22-alpine AS builder
+
+ARG COMMIT_SHA=dev
+
+WORKDIR /app
+
+# Copy workspace config
+COPY package.json package-lock.json* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/backend/package.json ./packages/backend/
+COPY packages/frontend/package.json ./packages/frontend/
+
+# Install dependencies (skip prepare/lefthook — not needed in Docker)
+RUN npm install --ignore-scripts
+
+# Copy source
+COPY packages/shared/ ./packages/shared/
+COPY packages/backend/ ./packages/backend/
+COPY packages/frontend/ ./packages/frontend/
+COPY tsconfig.json ./
+
+# Build shared types (needed by both frontend and backend)
+RUN npm run build -w packages/shared
+
+# Build frontend (COMMIT_SHA is read by vite.config.ts)
+ENV COMMIT_SHA=${COMMIT_SHA}
+RUN npm run build -w packages/frontend
+
+# Build backend
+RUN npm run build -w packages/backend
+
+# ── Production stage ──────────────────────────────────────
+FROM node:22-alpine AS production
+
+WORKDIR /app
+
+# Install production deps only
+COPY package.json package-lock.json* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/backend/package.json ./packages/backend/
+COPY packages/frontend/package.json ./packages/frontend/
+
+RUN apk add --no-cache python3 make g++ && \
+    npm install --omit=dev --ignore-scripts && \
+    npm rebuild better-sqlite3 && \
+    apk del python3 make g++
+
+# Copy shared compiled output (needed at runtime for imports)
+COPY packages/shared/package.json ./packages/shared/
+COPY --from=builder /app/packages/shared/dist/ ./packages/shared/dist/
+
+# Copy built backend
+COPY --from=builder /app/packages/backend/dist/ ./packages/backend/dist/
+
+# Copy built frontend
+COPY --from=builder /app/packages/frontend/dist/ ./packages/frontend/dist/
+
+# Create data directory for SQLite
+RUN mkdir -p /app/data
+
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV DB_PATH=/app/data/droneroute.db
+
+EXPOSE 3001
+
+VOLUME ["/app/data"]
+
+CMD ["node", "packages/backend/dist/index.js"]
