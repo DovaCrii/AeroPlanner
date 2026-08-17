@@ -5,60 +5,72 @@
 
 ## Estado al 2026-08-17
 
-**El repositorio existe; la aplicación no.** Lo que hay es la decisión de
-arquitectura, el plan de fases y la documentación de producto. Cero código de
-aplicación, cero dependencias instaladas.
+**El código base está incorporado y compila.** El repositorio dejó de ser solo
+documentación: contiene el código de DroneRoute con su historial completo, y la
+aplicación se levanta y planifica misiones DJI.
 
-- **Rama:** `main`.
-- **Licencia:** MIT.
+- **Rama:** `main`. **Licencia:** MIT, conservando el copyright original.
+- **Remotos:** `origin` (DovaCrii/AeroPlanner) y `upstream` (fcsonline/droneroute).
+- **Build:** `npm install && npm run build` verde en los 4 paquetes (Node 26, npm 11).
 - **Repositorio hermano:** [AeroControl](https://github.com/DovaCrii/AeroControl) —
   en **solo lectura** mientras dure el MVP.
 
-## Cómo se llegó hasta aquí
+## Decisiones tomadas el 2026-08-17
 
-El punto de partida fue un análisis de siete proyectos open source de
-planificación UAV, que recomendaba construir AeroPlanner desde cero con React +
-CesiumJS en nueve fases. Ese análisis se tomó como **referencial** y se contrastó
-contra el repositorio real de AeroControl y contra el estado actual de las
-herramientas. Tres conclusiones cambiaron el plan:
+1. **Este repositorio absorbe el código**, en vez de mantener un fork aparte. El
+   upstream queda como remoto para traer mejoras — publicó tres versiones en un
+   mes, así que ese canal vale.
+2. **Se migra de Mapbox a MapLibre** (`F0.10`). Hoy la aplicación **no arranca
+   sin un token de Mapbox**, lo que contradice el local-first del proyecto.
 
-1. **DroneRoute ya trae mucho más de lo que el análisis asumía** — mapa 3D con
-   terreno, perfil de elevación, obstáculos, frustum de cámara, import/export DJI
-   WPML/KMZ, Docker y CLI de carga al control, todo MIT. Partir de un fork da un
-   planificador usable en la primera semana, en vez de meses de andamiaje.
-2. **CesiumJS no corresponde al MVP** — el runtime es Apache 2.0, pero el terreno
-   servido por Cesium ion tiene costo comercial.
-3. **AeroControl no puede absorber el planificador** — su límite de frontend
-   (Django + Bootstrap + HTMX, sin paso de build) está definido por escrito, y el
-   proyecto está en pausa de estabilización.
+## Lo que las auditorías cambiaron
 
-Además se agregó al alcance algo que el análisis original no cubría: el **visor
-de ortofotos y nubes de puntos** (Fase 6), porque cierra el ciclo — el DSM y la
-ortofoto del vuelo procesado son mejor insumo para planificar el siguiente que
-cualquier fuente pública.
+Tres supuestos del plan original resultaron falsos. El detalle está en
+`MASTER_PLAN.md` → _Hallazgos de auditoría_; el resumen:
+
+- **No hay fotogrametría.** La grilla usa un `spacingM` manual, sin modelo de
+  cámara ni traslapes. La Fase 1 pasa de "conectar" a **construir el motor
+  entero**.
+- **No hay terreno.** Ni `raster-dem`, ni muestreo de elevación. El gráfico de
+  elevación grafica la altitud de los waypoints, no el suelo. La Fase 3 es
+  **construcción completa**.
+- **El token de Mapbox es peor de lo previsto:** no afecta solo al 3D, el mapa
+  entero no renderiza sin él.
+
+El lado bueno: al no haber terreno que portar, la migración a MapLibre es más
+simple de lo que se temía. Alcance medido: 15 archivos, ~81 ocurrencias.
+
+## Limpieza aplicada al incorporar el código
+
+El merge traía infraestructura apuntando a cuentas ajenas, eliminada antes de
+publicar: el `CNAME` de `droneroute.io`, `fly.toml` y su workflow de despliegue
+—que se disparaba **en cada push**—, la publicación de imagen a
+`fcsonline/droneroute` en Docker Hub, y el auto-merge de dependabot. Se conservó
+`ci.yml` (build y lint en PR).
 
 ## Qué sigue, exactamente
 
-**Fase 0 completa, empezando por `F0.1`.** No saltar a implementar el motor
-fotogramétrico: primero hay que saber qué trae el fork por dentro (auditorías
-`F0.4` a `F0.7`), porque de eso depende si la Fase 1 es "conectar" o "reescribir".
+**`F0.10`, la migración a MapLibre**, es lo más urgente: sin ella no hay
+despliegue interno posible sin contratar Mapbox. Requiere una decisión previa —
+**de dónde salen las teselas base y la imagen satelital** (OpenFreeMap,
+Protomaps, teselas propias), que es donde el usuario tiene que opinar.
 
-Los dos ítems que pueden invalidar el plan y por eso van temprano:
+En paralelo, sin dependencias entre sí:
 
-- **`F0.5`** — si el 3D del fork depende de un token comercial, hay que
-  reemplazarlo antes de construir encima.
-- **`F0.9`** — si el control real de la flota no acepta el KMZ que genera el
-  fork, la premisa completa del fork se cae. Verificarlo **antes** de invertir en
-  las fases siguientes.
+- **`F0.9`** — verificar que el KMZ que genera la aplicación **lo acepta el
+  control real**. Es el único riesgo que todavía puede invalidar la premisa de
+  haber partido de este código; conviene despejarlo pronto.
+- **`F0.8`** — desplegar WebODM en su contenedor: procesar y ver ortofoto y nube
+  de puntos sin escribir una línea.
+- **`F0.6`** y **`F0.7`** — auditorías de autenticación multiusuario y del modelo
+  de misión frente al contrato con AeroControl.
 
 ## Decisiones pendientes que solo el usuario puede tomar
 
-- **`F0.2` — estructura del repositorio:** ¿este repo absorbe el código del fork,
-  o el fork vive como repositorio aparte y este queda como repositorio de
-  producto y documentación? Afecta el historial de git y la trazabilidad del
-  upstream.
-- **Nombre de despliegue y dominio** (`planner.<dominio>` o similar), y si
-  comparte VM con AeroControl.
+- **Proveedor de teselas** para la migración a MapLibre (afecta calidad visual y
+  si hace falta servir teselas propias).
+- **Nombre de despliegue y dominio** (`planner.<dominio>`), y si comparte VM con
+  AeroControl.
 - **Autonomía operacional y reserva de batería** por modelo de aeronave: son
   números de política de la operación, no constantes técnicas. Inventarlos
   convierte la validación en un estorbo que alguien va a desactivar.
