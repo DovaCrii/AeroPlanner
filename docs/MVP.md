@@ -12,44 +12,44 @@ problema.
 
 ## Qué entra
 
-| Capacidad | Fase | Notas |
-| --- | --- | --- |
-| Crear proyecto y misión | 0 | Ya en el fork |
-| Dibujar AOI · importar KML/KMZ | 0 | Ya en el fork |
-| Waypoints manuales, POI, acciones de cámara | 0 | Ya en el fork |
-| Survey/grilla, órbita, escaneo de fachada | 0 | Ya en el fork; la grilla se reemplaza o envuelve en Fase 1 |
-| Mapa 2D y vista 3D | 0 | Ya en el fork; fuente de elevación por confirmar |
-| Exportar DJI WPML/KMZ · KML · GeoJSON | 0 | Ya en el fork; **verificar contra el control real** |
-| Seleccionar aeronave y cámara | 1 | Catálogo propio, partiendo por el Mavic 3E |
-| GSD ↔ altura de vuelo | 1 | |
-| Traslape frontal y lateral → separación de líneas | 1 | |
-| Intervalo de disparo y velocidad sin *motion blur* | 1 | |
-| Distancia, duración, superficie, nº de fotos | 1 | |
-| Baterías estimadas y división de la misión | 1 | Con reserva configurable |
-| Corredores lineales | 2 | Líneas eléctricas, caminos, corredores mineros |
-| Importar DEM/DSM · terrain following | 3 | Copernicus GLO-30 + GeoTIFF propio |
-| Perfil terreno/vuelo con clearance mínimo | 3 | |
-| Simulación animada con línea de tiempo | 4 | Cinemática, 1x–10x |
-| Footprints de foto y análisis de cobertura | 4 | Hace visible el traslape real y los huecos |
-| Validación contra el permiso DGAC | 5 | Altura máxima, radio, vigencia |
-| Entrega del plan a AeroControl | 5 | KMZ primero, API después |
-| Visor de ortofoto y nube de puntos | 6 | COG + COPC/Potree |
+| Capacidad                                          | Fase | Notas                                                      |
+| -------------------------------------------------- | ---- | ---------------------------------------------------------- |
+| Crear proyecto y misión                            | 0    | Ya en el fork                                              |
+| Dibujar AOI · importar KML/KMZ                     | 0    | Ya en el fork                                              |
+| Waypoints manuales, POI, acciones de cámara        | 0    | Ya en el fork                                              |
+| Survey/grilla, órbita, escaneo de fachada          | 0    | Ya en el fork; la grilla se reemplaza o envuelve en Fase 1 |
+| Mapa 2D y vista 3D                                 | 0    | Ya en el fork; fuente de elevación por confirmar           |
+| Exportar DJI WPML/KMZ · KML · GeoJSON              | 0    | Ya en el fork; **verificar contra el control real**        |
+| Seleccionar aeronave y cámara                      | 1    | Catálogo propio, partiendo por el Mavic 3E                 |
+| GSD ↔ altura de vuelo                              | 1    |                                                            |
+| Traslape frontal y lateral → separación de líneas  | 1    |                                                            |
+| Intervalo de disparo y velocidad sin _motion blur_ | 1    |                                                            |
+| Distancia, duración, superficie, nº de fotos       | 1    |                                                            |
+| Baterías estimadas y división de la misión         | 1    | Con reserva configurable                                   |
+| Corredores lineales                                | 2    | Líneas eléctricas, caminos, corredores mineros             |
+| Importar DEM/DSM · terrain following               | 3    | Copernicus GLO-30 + GeoTIFF propio                         |
+| Perfil terreno/vuelo con clearance mínimo          | 3    |                                                            |
+| Simulación animada con línea de tiempo             | 4    | Cinemática, 1x–10x                                         |
+| Footprints de foto y análisis de cobertura         | 4    | Hace visible el traslape real y los huecos                 |
+| Validación contra el permiso DGAC                  | 5    | Altura máxima, radio, vigencia                             |
+| Entrega del plan a AeroControl                     | 5    | KMZ primero, API después                                   |
+| Visor de ortofoto y nube de puntos                 | 6    | COG + COPC/Potree                                          |
 
 ## Qué no entra, y por qué
 
 Esto no es una lista de "después vemos": son decisiones tomadas.
 
-| Qué | Por qué |
-| --- | --- |
-| **PX4 SITL + Gazebo** (simulación física) | No simula un DJI real — validaría el comportamiento de un autopiloto PX4, que no es el que vuela. Para planificar bien no aporta |
-| **CesiumJS** | El runtime es Apache 2.0, pero el terreno de Cesium ion tiene costo comercial. El 3D del fork alcanza para el MVP |
-| **Fields2Cover / OR-Tools** | Resuelve optimización de cobertura en polígonos irregulares con obstáculos. Recién tiene sentido cuando "generar una grilla" quede corto |
-| **QGroundControl `.plan` y MAVLink** | La flota es DJI; el formato que importa es WPML |
-| **Multi-drone** | Un piloto, una aeronave, una misión |
-| **Meteorología** | AeroControl ya la resuelve con `WeatherReview` sobre Open-Meteo. Duplicarla sería peor que no tenerla |
-| **Mapas de espacio aéreo DGAC** | Requiere una fuente oficial que hoy no existe como servicio consultable |
-| **Edición y clasificación de nubes de puntos** | Aquí solo se visualiza. El procesamiento es de WebODM y CloudCompare |
-| **Telemetría en vivo y control de vuelo** | Es una estación de control terrestre, otro producto |
+| Qué                                            | Por qué                                                                                                                                  |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **PX4 SITL + Gazebo** (simulación física)      | No simula un DJI real — validaría el comportamiento de un autopiloto PX4, que no es el que vuela. Para planificar bien no aporta         |
+| **CesiumJS**                                   | El runtime es Apache 2.0, pero el terreno de Cesium ion tiene costo comercial. El 3D del fork alcanza para el MVP                        |
+| **Fields2Cover / OR-Tools**                    | Resuelve optimización de cobertura en polígonos irregulares con obstáculos. Recién tiene sentido cuando "generar una grilla" quede corto |
+| **QGroundControl `.plan` y MAVLink**           | La flota es DJI; el formato que importa es WPML                                                                                          |
+| **Multi-drone**                                | Un piloto, una aeronave, una misión                                                                                                      |
+| **Meteorología**                               | AeroControl ya la resuelve con `WeatherReview` sobre Open-Meteo. Duplicarla sería peor que no tenerla                                    |
+| **Mapas de espacio aéreo DGAC**                | Requiere una fuente oficial que hoy no existe como servicio consultable                                                                  |
+| **Edición y clasificación de nubes de puntos** | Aquí solo se visualiza. El procesamiento es de WebODM y CloudCompare                                                                     |
+| **Telemetría en vivo y control de vuelo**      | Es una estación de control terrestre, otro producto                                                                                      |
 
 ## Por qué se parte de un fork y no de cero
 

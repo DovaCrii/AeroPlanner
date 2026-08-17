@@ -32,6 +32,11 @@ import type {
   PencilParams,
 } from "@/lib/templates";
 import type { PointOfInterest } from "@droneroute/shared";
+import {
+  lineSpacingForOverlapM,
+  nominalGsdCm,
+  MAVIC_3E_WIDE,
+} from "@aeroplanner/mission-core";
 
 interface TemplateConfigPanelProps {
   type: TemplateType;
@@ -218,12 +223,20 @@ export function TemplateConfigPanel({
             </Label>
             <NumericInput
               value={toDisplayHeight(gridParams.altitude, unitSystem)}
-              onChange={(v) =>
+              onChange={(v) => {
+                const altitude = fromDisplayHeight(v, unitSystem);
                 onGridChange({
                   ...gridParams,
-                  altitude: fromDisplayHeight(v, unitSystem),
-                })
-              }
+                  altitude,
+                  // Spacing follows altitude: the footprint grows with height,
+                  // so holding the overlap means widening the lines.
+                  spacingM: lineSpacingForOverlapM(
+                    MAVIC_3E_WIDE,
+                    altitude,
+                    gridParams.sideOverlap,
+                  ),
+                });
+              }}
               min={5}
               step={5}
               fallback={80}
@@ -231,20 +244,25 @@ export function TemplateConfigPanel({
             />
           </div>
           <div>
-            <Label className="text-[10px]">
-              Line spacing ({distanceLabel(unitSystem)})
-            </Label>
+            <Label className="text-[10px]">Side overlap (%)</Label>
             <NumericInput
-              value={toDisplayDistance(gridParams.spacingM, unitSystem)}
-              onChange={(v) =>
+              value={Math.round(gridParams.sideOverlap * 100)}
+              onChange={(v) => {
+                const overlap = Math.min(95, Math.max(0, v)) / 100;
                 onGridChange({
                   ...gridParams,
-                  spacingM: fromDisplayDistance(v, unitSystem),
-                })
-              }
-              min={3}
+                  sideOverlap: overlap,
+                  spacingM: lineSpacingForOverlapM(
+                    MAVIC_3E_WIDE,
+                    gridParams.altitude,
+                    overlap,
+                  ),
+                });
+              }}
+              min={0}
+              max={95}
               step={5}
-              fallback={30}
+              fallback={70}
               className="h-7 text-xs"
             />
           </div>
@@ -283,6 +301,24 @@ export function TemplateConfigPanel({
               />
               Reverse
             </label>
+          </div>
+          {/*
+            What the chosen overlap and altitude actually produce. Line spacing
+            is no longer typed in — it is derived — so it is shown here as the
+            consequence it is.
+          */}
+          <div className="col-span-2 text-[10px] text-muted-foreground border-t border-border pt-1.5">
+            GSD{" "}
+            <span className="text-foreground font-medium">
+              {nominalGsdCm(MAVIC_3E_WIDE, gridParams.altitude).toFixed(1)}{" "}
+              cm/px
+            </span>{" "}
+            · line spacing{" "}
+            <span className="text-foreground font-medium">
+              {toDisplayDistance(gridParams.spacingM, unitSystem).toFixed(1)}{" "}
+              {distanceLabel(unitSystem)}
+            </span>{" "}
+            · {MAVIC_3E_WIDE.label}
           </div>
         </div>
       )}

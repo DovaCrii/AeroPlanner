@@ -65,6 +65,22 @@ Tres cosas que costaron y conviene no reaprender:
 3. MapLibre no tiene `map.project(lngLat, altitude)`. La línea vertical del
    waypoint ahora se aproxima con la escala del mapa y el pitch.
 
+## Fase 1: el motor existe (`packages/mission-core`)
+
+Dominio puro, sin React ni mapa ni DOM, con 32 pruebas en Node. Cubre GSD ↔
+altura, footprint, traslapes → separación de líneas y de disparos, velocidad
+recomendada (declarando **qué** la limita: blur, obturador o aeronave), división
+por baterías y estadísticas de misión.
+
+La grilla ya no pide una separación a mano: se fija el **traslape lateral** y el
+motor deriva la separación, mostrando el GSD que resulta. A 80 m con el Mavic 3E
+son 2,15 cm/px y pasadas cada 34 m.
+
+Falta **cablear** dos cosas que el motor ya calcula pero la interfaz aún no
+muestra (`F1.4` y `F1.5`): el panel de estadísticas de la misión completa y el
+aviso de división por baterías. Requieren tomar la geometría real de la grilla
+generada, no solo sus parámetros.
+
 ## Qué sigue, exactamente
 
 **`F0.9` es la prioridad:** verificar que el KMZ que genera la aplicación **lo
@@ -75,10 +91,10 @@ delante.
 
 Después, sin dependencias entre sí:
 
+- **`F1.4`/`F1.5`** — cablear estadísticas y baterías a la interfaz.
 - **`F0.8`** — desplegar WebODM en su contenedor: procesar y ver ortofoto y nube
   de puntos sin escribir una línea.
-- **Fase 1** — el motor fotogramétrico, que las auditorías confirmaron que hay
-  que construir entero.
+- **Fase 2** — corredores, el tipo de misión que más se usa en faena.
 
 ## Decisiones pendientes que solo el usuario puede tomar
 

@@ -9,15 +9,15 @@
 
 Cada sistema es dueño de lo suyo y ninguno necesita al otro para funcionar.
 
-| AeroControl | AeroPlanner |
-| --- | --- |
-| Aeronaves, operadores y habilitaciones | Geometría de la misión |
-| Permisos DGAC y su vigencia | Cálculo fotogramétrico |
-| Centros de costo | Terreno y clearance |
-| Cumplimiento documental y alertas | Simulación y validación técnica |
-| Mantenimiento | Exportación al formato de la aeronave |
-| Vuelos ejecutados | Productos del vuelo (ortofoto, nube, DSM) |
-| Aprobación y trazabilidad del plan | |
+| AeroControl                            | AeroPlanner                               |
+| -------------------------------------- | ----------------------------------------- |
+| Aeronaves, operadores y habilitaciones | Geometría de la misión                    |
+| Permisos DGAC y su vigencia            | Cálculo fotogramétrico                    |
+| Centros de costo                       | Terreno y clearance                       |
+| Cumplimiento documental y alertas      | Simulación y validación técnica           |
+| Mantenimiento                          | Exportación al formato de la aeronave     |
+| Vuelos ejecutados                      | Productos del vuelo (ortofoto, nube, DSM) |
+| Aprobación y trazabilidad del plan     |                                           |
 
 **AeroControl aprueba; AeroPlanner calcula.** El flujo corporativo —revisión,
 aprobación, versionado inmutable— ya existe y funciona en AeroControl. El
@@ -55,12 +55,12 @@ no como geometría inventada.
 AeroControl expone una API REST con autenticación por token. Los tres puntos que
 interesan:
 
-| Uso | Endpoint | Dirección | ¿Cambia AeroControl? |
-| --- | --- | --- | --- |
-| Leer el permiso para validar la misión | `GET /api/v1/...` | AeroPlanner lee | No, si el permiso ya es legible por API |
-| Leer el padrón de aeronaves | `GET /api/v1/registry/aircraft/` | AeroPlanner lee | No — ya existe |
-| Enviar el plan calculado | `POST /api/v1/geo/plans/<uuid>/versions/` | AeroPlanner escribe | Sí — requiere aceptar el contenido desde un cliente externo |
-| Abrir el planificador desde un permiso | enlace profundo | AeroControl enlaza | Sí — botón nuevo |
+| Uso                                    | Endpoint                                  | Dirección           | ¿Cambia AeroControl?                                        |
+| -------------------------------------- | ----------------------------------------- | ------------------- | ----------------------------------------------------------- |
+| Leer el permiso para validar la misión | `GET /api/v1/...`                         | AeroPlanner lee     | No, si el permiso ya es legible por API                     |
+| Leer el padrón de aeronaves            | `GET /api/v1/registry/aircraft/`          | AeroPlanner lee     | No — ya existe                                              |
+| Enviar el plan calculado               | `POST /api/v1/geo/plans/<uuid>/versions/` | AeroPlanner escribe | Sí — requiere aceptar el contenido desde un cliente externo |
+| Abrir el planificador desde un permiso | enlace profundo                           | AeroControl enlaza  | Sí — botón nuevo                                            |
 
 Los dos últimos son los que tocan AeroControl y por eso quedan al final del plan.
 
