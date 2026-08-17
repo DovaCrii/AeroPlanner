@@ -1,0 +1,25 @@
+# El repositorio se edita en Windows pero corre en contenedores Linux. Sin
+# normalizacion, un script con CRLF falla dentro del contenedor con un "not
+# found" que no dice nada util.
+* text=auto eol=lf
+
+# Lo que ejecuta el contenedor: LF sin excepcion.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Lo que ejecuta Windows.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binarios y geodatos: git no los normaliza ni intenta diffearlos.
+*.png binary
+*.jpg binary
+*.ico binary
+*.kmz binary
+*.tif binary
+*.tiff binary
+*.laz binary
+*.las binary
